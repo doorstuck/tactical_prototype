@@ -1,24 +1,47 @@
 require "globals"
+require "utils/cells"
+require "characters/char_base"
 
 background_img = nil
 background_quad = nil
 
 selected_cells = {}
 
+chars = {}
+
 function love.load(arg)
   love.graphics.setBlendMode("alpha")
   background_img = love.graphics.newImage('assets/background/grass.jpg')
   background_quad = love.graphics.newQuad(0, 0, background_width, background_height, background_img:getDimensions())
+  
+  -- For testing only
+  char = CharacterBase.new(3,3, 'assets/characters/char.png')
+  char.path = { {["x"] = 3, ["y"] = 4}, {["x"] = 3, ["y"] = 5}, {["x"] = 4, ["y"] = 5}, {["x"] = 5, ["y"] = 5}, {["x"] = 6, ["y"] = 5}, {["x"] = 7, ["y"] = 5}}
+  table.insert(chars, char)
 end
 
 function love.update(dt)
+  move_characters(dt)
 end
 
 function love.draw(dt)
   draw_background()
   draw_cells()
+  draw_characters()
   draw_selected_square()
   draw_selected_cells()
+end
+
+function draw_characters()
+  for i, char in ipairs(chars) do
+    char:Draw()
+  end
+end
+
+function move_characters(dt)
+  for i, char in ipairs(chars) do
+    char:Move(dt)
+  end
 end
 
 function draw_background()
@@ -60,22 +83,6 @@ function draw_selected_cell(cell_x, cell_y)
   love.graphics.setColor(150, 0, 0, 100)
   x1, y1, x2, y2 = get_cell_coordinates(cell_x, cell_y)
   love.graphics.rectangle("fill", x1, y1, cell_size, cell_size)
-end
-
-function get_cell_coordinates(cell_x, cell_y)
-  -- cell_size + 1 pixel for border for each cell + 1 pixel after the final border
-  x1 = cell_x * (cell_size + 1) + 1
-  y1 = cell_y * (cell_size + 1) + 1
-  -- taking inner point, that's why it's -1
-  x2 = (cell_x + 1) * (cell_size + 1) - 1
-  y2 = (cell_y + 1) * (cell_size + 1) - 1
-  return x1, y1, x2, y2
-end
-
-function get_cell_in(x, y)
-  cell_x = math.floor(x / (cell_size + 1))
-  cell_y = math.floor(y / (cell_size + 1))
-  return cell_x, cell_y  
 end
 
 function love.mousepressed(x, y, button, istouch)
