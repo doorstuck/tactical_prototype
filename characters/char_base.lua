@@ -5,9 +5,11 @@ CharacterBase.__index = CharacterBase
 
 -- Move speed is pixels per second.
 -- This means that character moves 2 cells per second.
-default_move_speed = (cell_size * 2)
+default_move_speed = (cell_size * 5)
 
-function CharacterBase.new(cell_x, cell_y, img_file)
+default_speed = 4
+
+function CharacterBase.new(cell_x, cell_y, img_file, update_callback, updater)
   local char_base = {}
   setmetatable(char_base, CharacterBase)
   char_base.img = love.graphics.newImage(img_file)
@@ -17,6 +19,10 @@ function CharacterBase.new(cell_x, cell_y, img_file)
   char_base.x = x1
   char_base.y = y1
   char_base.move_speed = default_move_speed
+  char_base.update_callback = update_callback
+  char_base.update_callback = updater
+  char_base.speed = default_speed
+  char_base.action_points = default_speed
   return char_base
 end
 
@@ -39,7 +45,12 @@ function CharacterBase:Move(dt)
   while time_left > time_to_reach_next_cell do
     next_cell = table.remove(self.path, 1)
     self.x, self.y, temp_x, temp_y = get_cell_coordinates(next_cell.x, next_cell.y) 
-    if (#self.path == 0) then return end
+    if (#self.path == 0) then 
+      if (self.update_callback) then self.update_callback(self.updater, self.cell_x, self.cell_y, next_cell.x, next_cell.y) end
+      self.cell_x = next_cell.x
+      self.cell_y = next_cell.y
+      return 
+    end
     time_left = time_left - time_to_reach_next_cell
     pixels_to_next_cell = get_distance_to_cell(self.x, self.y, self.path[1].x, self.path[1].y)
     time_to_reach_next_cell = pixels_to_next_cell / self.move_speed

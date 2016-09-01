@@ -1,5 +1,5 @@
 Point = {}
-Point.__index = CharacterBase
+Point.__index = Point
 
 function Point.new(x, y)
   local point = {}
