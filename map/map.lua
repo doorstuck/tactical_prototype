@@ -72,11 +72,8 @@ function Map.GenerateCells(horizontal_cells, vertical_cells)
 end
 
 function Map.UpdateCharPosition(map, prev_cell_x, prev_cell_y, new_cell_x, new_cell_y)
-  local map_point_prev = MapPoint.new(prev_cell_x, prev_cell_y)
-  local prev_hash = map_point_prev:GetHash()
-  
-  local map_point_new = MapPoint.new(new_cell_x, new_cell_y)
-  local new_hash = map_point_new:GetHash()
+  local prev_hash = MapPoint.CalculateHash(prev_cell_x, prev_cell_y)
+  local new_hash = MapPoint.CalculateHash(next_cell_x, next_cell_y)
 
   map.chars[new_hash] = map.chars[prev_hash]
   map.chars[prev_hash] = nil

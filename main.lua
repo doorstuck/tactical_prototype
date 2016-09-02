@@ -12,8 +12,8 @@ is_controlable = true
 
 function create_test_chars()
   local chars = {}
-  char = CharacterBase.new(3,3, 'assets/characters/char.png')
-  char.path = { {["x"] = 3, ["y"] = 4}, {["x"] = 3, ["y"] = 5}, {["x"] = 4, ["y"] = 5}, {["x"] = 5, ["y"] = 5}, {["x"] = 6, ["y"] = 5}, {["x"] = 7, ["y"] = 5}}
+  local char = CharacterBase.new(3,3, 'assets/characters/char.png')
+  -- char.path = { {["x"] = 3, ["y"] = 4}, {["x"] = 3, ["y"] = 5}, {["x"] = 4, ["y"] = 5}, {["x"] = 5, ["y"] = 5}, {["x"] = 6, ["y"] = 5}, {["x"] = 7, ["y"] = 5}}
   table.insert(chars, char)
   return chars
 end

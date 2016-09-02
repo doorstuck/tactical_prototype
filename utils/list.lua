@@ -37,7 +37,7 @@ function List:RemoveLast()
 end
 
 function List:IsEmpty()
-  return self.first == self.last
+  return self.first == 0 or self.first > self.last
 end
 
 function List:RemoveFirst()
