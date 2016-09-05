@@ -1,4 +1,5 @@
 require "map/map_point"
+require "utils/path_finder"
 
 Map = {}
 Map.__index = Map
@@ -9,6 +10,7 @@ function Map.new(cells, chars)
 
   map.cells = {}
   map.chars = {}
+  map.paths = {}
   map:AddCells(cells)
   map:AddChars(chars)
   
@@ -49,7 +51,6 @@ end
 
 function Map:DrawChars()
   for i, char in pairs(self.chars) do
-    print("char")
     char:Draw()
   end
 end
@@ -77,9 +78,30 @@ function Map.UpdateCharPosition(map, prev_cell_x, prev_cell_y, new_cell_x, new_c
 
   map.chars[new_hash] = map.chars[prev_hash]
   map.chars[prev_hash] = nil
+  
+  -- update cached character path because she moved.
+  map.paths[prev_hash] = nil
 end
 
+function Map:GetCharMoveblePoints(cell_x, cell_y)
+  LogDebug("Getting moveble points")
+  char_point_hash = MapPoint.CalculateHash(cell_x, cell_y)
+  char = self.chars[char_point_hash]
+  if (not char) then return nil end
 
-function Map:GetPath(origin_point, dest_point)
- 
+  LogDebug("Char is found")
+
+  points = self.paths[char_point_hash]
+  if (points) then return points end
+
+  LogDebug("Points are not found")
+
+  points = PathFinder.FindAllReachablePoints(self, MapPoint.new(cell_x, cell_y), 5)
+
+  LogDebug("And number of points is " .. #points)
+
+  self.paths[char_point_hash] = points
+
+  return points
+
 end

@@ -2,6 +2,7 @@ require "globals"
 require "utils/cells"
 require "characters/char_base"
 require "map/map"
+require "utils/log"
 
 background_img = nil
 background_quad = nil
@@ -12,7 +13,7 @@ is_controlable = true
 
 function create_test_chars()
   local chars = {}
-  local char = CharacterBase.new(3,3, 'assets/characters/char.png')
+  local char = CharacterBase.new(5,5, 'assets/characters/char.png')
   -- char.path = { {["x"] = 3, ["y"] = 4}, {["x"] = 3, ["y"] = 5}, {["x"] = 4, ["y"] = 5}, {["x"] = 5, ["y"] = 5}, {["x"] = 6, ["y"] = 5}, {["x"] = 7, ["y"] = 5}}
   table.insert(chars, char)
   return chars
@@ -109,11 +110,14 @@ function draw_mouse_over_square()
 end
 
 function draw_selected_cells()
-  --if (not is_controlable) then return
+  if (not is_controlable) then return end
   for cell_x, y_values in pairs(selected_cells) do
     for cell_y, value in pairs(y_values) do
-      if (value) then
-        draw_selected_cell(cell_x, cell_y)
+      draw_selected_cell(cell_x, cell_y)
+
+      -- draw cells that character can move to.
+      for cell, prev_path_cell in pairs(map:GetCharMoveblePoints(cell_x, cell_y)) do
+        draw_selected_cell(cell.cell_x, cell.cell_y)
       end
     end
   end
@@ -141,7 +145,7 @@ function select_cell(cell_x, cell_y)
 end
 
 function unselect_cell(cell_x, cell_y)
-  selected_cells[cell_x][cell_y] = false
+  selected_cells[cell_x][cell_y] = nil
 end
 
 function is_cell_selected(cell_x, cell_y)

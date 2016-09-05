@@ -1,4 +1,7 @@
+require "utils/list"
 
+PathFinder = {}
+PathFinder.__index = PathFinder
 
 function PathFinder.FindAllReachablePoints(map, origin_point, length_limit)
   -- Args:
@@ -6,35 +9,58 @@ function PathFinder.FindAllReachablePoints(map, origin_point, length_limit)
   -- returns a table of a type:
   -- hash to the list of points in the path
   local result_table = {}
+
+  local list = List.new()
+  list:InsertLast({["point"] = origin_point, ["path_length"] = 0, ["prev_point"] = nil})
   
-  PathFinder.FindAllReachablePointsInternal(map, origin_point, lenght_limit, result_table)
+  PathFinder.FindAllReachablePointsInternal(map, list, length_limit, result_table)
 
   return result_table
 end
 
+function PathFinder.FindAllReachablePointsInternal(map, list, length_limit, result_table)
+  if (not length_limit) or length_limit <= 0 then return end
+  while (not list:IsEmpty()) do
+    removed_item = list:RemoveFirst()
 
-function PathFinder.FindAllReachablePointsInternal(map, current_point, length_limit, result_table)
-  if (not length_limit) or lenght_limit <= 0 then return end
+    current_point = removed_item["point"]
+    path_length = removed_item["path_length"]
+    prev_point = removed_item["prev_point"]
 
-  local up_point = map.cells[MapPoint.CalculateHash(current_point.cell_x, current_point.cell_y - 1)]
-  local down_point = map.cells[MapPoint.CalculateHash(current_point.cell_x, current_point.cell_y + 1)]
-  local left_point = map.cells[MapPoint.CalculateHash(current_point.cell_x - 1, current_point.cell_y)]
-  local right_point = map.cells[MapPoint.CalculateHash(current_point.cell_x + 1, current_point.cell_y)]
-  
-  PathFinder.GetToNextPoint(map, current_point, up_point, lenght_limit, result_table)
-  PathFinder.GetToNextPoint(map, current_point, down_point, lenght_limit, result_table)
-  PathFinder.GetToNextPoint(map, current_point, left_point, lenght_limit, result_table)
-  PathFinder.GetToNextPoint(map, current_point, right_point, lenght_limit, result_table)
+    if (not current_point) then goto continue end
+    if (length_limit < path_length) then goto continue end
+
+    -- Already visited and visited quicker than this.
+    if (result_table[current_point] and result_table[current_point].path_length < path_length) then return end
+
+    do
+      local up_point = map.cells[MapPoint.CalculateHash(current_point.cell_x, current_point.cell_y - 1)]
+      local down_point = map.cells[MapPoint.CalculateHash(current_point.cell_x, current_point.cell_y + 1)]
+      local left_point = map.cells[MapPoint.CalculateHash(current_point.cell_x - 1, current_point.cell_y)]
+      local right_point = map.cells[MapPoint.CalculateHash(current_point.cell_x + 1, current_point.cell_y)]
+      
+      PathFinder.InsertNextPoint(current_point, up_point, map, path_length + 1, list)
+      PathFinder.InsertNextPoint(current_point, down_point, map, path_length + 1, list)
+      PathFinder.InsertNextPoint(current_point, left_point, map, path_length + 1, list)
+      PathFinder.InsertNextPoint(current_point, right_point, map, path_length + 1, list)
+
+      PathFinder.GetToNextPoint(map, current_point, prev_point, path_length, length_limit, result_table)
+    end
+
+    ::continue::
+  end
 
 end
 
-function PathFinder.GetToNextPoint(map, current_point, next_point, length_limit, result_table)
+function PathFinder.InsertNextPoint(prev_point, next_point, map, path_length, list)
   if (not next_point) then return end
-  -- Already visited.
-  if (result_table[next_point:GetHash()]) then return end
   if (not map:IsPassable(next_point.cell_x, next_point.cell_y)) then return end
+  list:InsertLast({ ["point"] = next_point, ["path_length"] = path_length, ["prev_point"] = prev_point })
+end
 
-  result_table[next_point:GetHash()] = current_point
-
-  PathFinder.FindAllReachablePointsInternal(map, next_point, length_limit - 1, result_table)
+function PathFinder.GetToNextPoint(map, current_point, prev_point, path_length, length_limit, result_table)
+  -- Already visited and visited quicker than this.
+  result_table[current_point] = {}
+  result_table[current_point].path_length = path_length
+  result_table[current_point].prev_point = prev_point
 end

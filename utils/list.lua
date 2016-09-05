@@ -1,4 +1,4 @@
-require "log"
+require "utils/log"
 List = {}
 List.__index = List
 
@@ -14,13 +14,13 @@ function List.new()
   return list
 end
 
-function List:Insert(element)
+function List:InsertLast(element)
   self.last = self.last + 1
   if (self.first == 0) then
     self.first = 1
   end
 
-  self.elements[last] = element
+  self.elements[self.last] = element
 end
 
 function List:RemoveLast()
@@ -31,7 +31,7 @@ function List:RemoveLast()
 
   local element = self.elements[self.last]
 
-  self.elements[last] = nil
+  self.elements[self.last] = nil
   self.last = self.last - 1
   return element
 end
@@ -48,7 +48,9 @@ function List:RemoveFirst()
   
   local element = self.elements[self.first]
 
-  self.elements[first] = nil
+  self.elements[self.first] = nil
   self.first = self.first + 1
+  LogDebug("First now is " .. self.first)
+  LogDebug("Last now is " .. self.last)
   return element
 end
