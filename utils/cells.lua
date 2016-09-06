@@ -18,5 +18,7 @@ function get_distance_to_cell(origin_x, origin_y, dest_cell_x, dest_cell_y)
   x1, y1, x2, y = get_cell_coordinates(dest_cell_x, dest_cell_y)
   local dx = origin_x - x1
   local dy = origin_y - y1
-  return math.floor(math.sqrt(math.pow(dx, 2) + math.pow(dy, 2)))
+  local result = math.floor(math.sqrt(math.pow(dx, 2) + math.pow(dy, 2)))
+
+  return result
 end

@@ -7,7 +7,7 @@ CharacterBase.__index = CharacterBase
 -- This means that character moves 2 cells per second.
 default_move_speed = (cell_size * 5)
 
-default_speed = 4
+default_speed = 5
 
 function CharacterBase.new(cell_x, cell_y, img_file, update_callback, updater)
   local char_base = {}
@@ -20,7 +20,7 @@ function CharacterBase.new(cell_x, cell_y, img_file, update_callback, updater)
   char_base.y = y1
   char_base.move_speed = default_move_speed
   char_base.update_callback = update_callback
-  char_base.update_callback = updater
+  char_base.updater = updater
   char_base.speed = default_speed
   char_base.action_points = default_speed
   return char_base
@@ -36,30 +36,35 @@ function CharacterBase:SetPath(path)
 end 
 
 function CharacterBase:Move(dt)
-  if not self.path or #self.path == 0 then return end
+  if not self.path or self.path:IsEmpty() then return end
   -- First, are we in the same cell?
   time_left = dt
   
-  pixels_to_next_cell = get_distance_to_cell(self.x, self.y, self.path[1].x, self.path[1].y)
+  local next_cell = self.path:PeekFirst()
+  
+  pixels_to_next_cell = get_distance_to_cell(self.x, self.y, next_cell.cell_x, next_cell.cell_y)
   time_to_reach_next_cell = pixels_to_next_cell / self.move_speed
+
   while time_left > time_to_reach_next_cell do
-    next_cell = table.remove(self.path, 1)
-    self.x, self.y, temp_x, temp_y = get_cell_coordinates(next_cell.x, next_cell.y) 
-    if (#self.path == 0) then 
-      if (self.update_callback) then self.update_callback(self.updater, self.cell_x, self.cell_y, next_cell.x, next_cell.y) end
-      self.cell_x = next_cell.x
-      self.cell_y = next_cell.y
+    next_cell = self.path:RemoveFirst()
+    self.x, self.y, temp_x, temp_y = get_cell_coordinates(next_cell.cell_x, next_cell.cell_y) 
+    if (self.path:IsEmpty()) then 
+      if (self.update_callback) then self.update_callback(self.updater, self.cell_x, self.cell_y, next_cell.cell_x, next_cell.cell_y) end
+      self.cell_x = next_cell.cell_x
+      self.cell_y = next_cell.cell_y
       return 
     end
+
+    next_cell = self.path:PeekFirst()
     time_left = time_left - time_to_reach_next_cell
-    pixels_to_next_cell = get_distance_to_cell(self.x, self.y, self.path[1].x, self.path[1].y)
+    pixels_to_next_cell = get_distance_to_cell(self.x, self.y, next_cell.cell_x, next_cell.cell_y)
     time_to_reach_next_cell = pixels_to_next_cell / self.move_speed
   end
 
   -- Now, since we cannot move past next cell, move as many pixels as we can.
   
   pixels_to_move = dt * default_move_speed
-  x1, y1, x2, y2 = get_cell_coordinates(self.path[1].x, self.path[1].y)
+  x1, y1, x2, y2 = get_cell_coordinates(next_cell.cell_x, next_cell.cell_y)
   dx = x1 - self.x
   dy = y1 - self.y
   if (dx == 0) then
@@ -67,10 +72,10 @@ function CharacterBase:Move(dt)
   elseif (dy == 0) then
     self.x =  self.x + self:MoveTowardsCoordinate(pixels_to_move, dx)
   else
-    ratio_x = math.abs(dx / dy + dx)
-    ratio_y = math.abs(dy / dy + dx)
+    local ratio_x = math.abs(dx / dy + dx)
+    local ratio_y = math.abs(dy / dy + dx)
     self.x = self.x + self:MoveTowardsCoordinate((pixels_to_move * ratio_x), dx)
-    self.y =  self.y + self:MoveTowardsCoordinate((pixels_to_move * ration_y), dy)
+    self.y =  self.y + self:MoveTowardsCoordinate((pixels_to_move * ratio_y), dy)
   end
   
 end

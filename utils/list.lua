@@ -6,8 +6,13 @@ function List.new()
   local list = {}
   setmetatable(list, List)
 
+  -- WTF you might think.
+  -- Well, this is the way the list is inialized, so that we don't have to
+  -- set these to nil and then init with proper values when last or first are
+  -- inserted.
+  -- Not very elegant, but it works.
   list.first = 0
-  list.last = 0
+  list.last = -1 
 
   list.elements = {}
   
@@ -16,11 +21,36 @@ end
 
 function List:InsertLast(element)
   self.last = self.last + 1
-  if (self.first == 0) then
-    self.first = 1
-  end
 
   self.elements[self.last] = element
+end
+
+function List:InsertFirst(element)
+  self.first = self.first - 1
+
+  self.elements[self.first] = element
+end
+
+function List:PeekLast()
+  if self:IsEmpty() then
+    LogError("Tried to peek empty list with last")
+    return nil
+  end
+  
+  return self.elements[self.last]
+end
+
+function List:GetLength()
+  return self.last - self.first + 1
+end
+
+function List:PeekFirst()
+  if self:IsEmpty() then
+    LogError("Tried to peek empty list with first")
+    return nil
+  end
+  
+  return self.elements[self.first]
 end
 
 function List:RemoveLast()
@@ -37,7 +67,7 @@ function List:RemoveLast()
 end
 
 function List:IsEmpty()
-  return self.first == 0 or self.first > self.last
+  return self.first > self.last
 end
 
 function List:RemoveFirst()
@@ -50,7 +80,5 @@ function List:RemoveFirst()
 
   self.elements[self.first] = nil
   self.first = self.first + 1
-  LogDebug("First now is " .. self.first)
-  LogDebug("Last now is " .. self.last)
   return element
 end

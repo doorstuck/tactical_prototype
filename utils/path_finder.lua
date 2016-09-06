@@ -5,7 +5,7 @@ PathFinder.__index = PathFinder
 
 function PathFinder.FindAllReachablePoints(map, origin_point, length_limit)
   -- Args:
-  --   map_points: table of map points hashes to the map points.
+  --   map_points: table of map point hashes to the prev_point and length.
   -- returns a table of a type:
   -- hash to the list of points in the path
   local result_table = {}
@@ -31,7 +31,7 @@ function PathFinder.FindAllReachablePointsInternal(map, list, length_limit, resu
     if (length_limit < path_length) then goto continue end
 
     -- Already visited and visited quicker than this.
-    if (result_table[current_point] and result_table[current_point].path_length < path_length) then return end
+    if (result_table[current_point:GetHash()] and result_table[current_point:GetHash()].path_length < path_length) then goto continue end
 
     do
       local up_point = map.cells[MapPoint.CalculateHash(current_point.cell_x, current_point.cell_y - 1)]
@@ -49,7 +49,6 @@ function PathFinder.FindAllReachablePointsInternal(map, list, length_limit, resu
 
     ::continue::
   end
-
 end
 
 function PathFinder.InsertNextPoint(prev_point, next_point, map, path_length, list)
@@ -60,7 +59,8 @@ end
 
 function PathFinder.GetToNextPoint(map, current_point, prev_point, path_length, length_limit, result_table)
   -- Already visited and visited quicker than this.
-  result_table[current_point] = {}
-  result_table[current_point].path_length = path_length
-  result_table[current_point].prev_point = prev_point
+  result_table[current_point:GetHash()] = {}
+  result_table[current_point:GetHash()].path_length = path_length
+  result_table[current_point:GetHash()].prev_point = prev_point
+  result_table[current_point:GetHash()].point = current_point
 end

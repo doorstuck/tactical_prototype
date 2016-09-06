@@ -74,7 +74,7 @@ end
 
 function Map.UpdateCharPosition(map, prev_cell_x, prev_cell_y, new_cell_x, new_cell_y)
   local prev_hash = MapPoint.CalculateHash(prev_cell_x, prev_cell_y)
-  local new_hash = MapPoint.CalculateHash(next_cell_x, next_cell_y)
+  local new_hash = MapPoint.CalculateHash(new_cell_x, new_cell_y)
 
   map.chars[new_hash] = map.chars[prev_hash]
   map.chars[prev_hash] = nil
@@ -84,24 +84,42 @@ function Map.UpdateCharPosition(map, prev_cell_x, prev_cell_y, new_cell_x, new_c
 end
 
 function Map:GetCharMoveblePoints(cell_x, cell_y)
-  LogDebug("Getting moveble points")
   char_point_hash = MapPoint.CalculateHash(cell_x, cell_y)
   char = self.chars[char_point_hash]
   if (not char) then return nil end
 
-  LogDebug("Char is found")
-
   points = self.paths[char_point_hash]
   if (points) then return points end
 
-  LogDebug("Points are not found")
-
-  points = PathFinder.FindAllReachablePoints(self, MapPoint.new(cell_x, cell_y), 5)
-
-  LogDebug("And number of points is " .. #points)
+  points = PathFinder.FindAllReachablePoints(self, MapPoint.new(cell_x, cell_y), char.action_points)
 
   self.paths[char_point_hash] = points
 
   return points
+end
 
+
+function Map:MoveChar(char, cell_x, cell_y)
+  paths = self.paths[MapPoint.CalculateHash(char.cell_x, char.cell_y)] 
+  if not paths then
+    LogError("Tried to move char to a position that she cannot move to.")
+    LogError("Char x: " .. char.cell_x .. " y: " .. char.cell_y)
+    LogError("Destination: x: " .. cell_x .. " y: " .. cell_y)
+    return
+  end
+  
+  path = Map.PointToMoveVector(paths, cell_x, cell_y)
+  char:SetPath(path)
+end
+
+function Map.PointToMoveVector(points, dest_cell_x, dest_cell_y)
+  -- Returns a list of points in the order of how to move char. 
+  list = List.new()
+  prev_point = MapPoint.new(dest_cell_x, dest_cell_y)
+  while (prev_point) do
+    list:InsertFirst(prev_point)
+    prev_point = points[MapPoint.CalculateHash(prev_point.cell_x, prev_point.cell_y)].prev_point
+  end
+
+  return list
 end
