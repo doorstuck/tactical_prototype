@@ -63,8 +63,8 @@ end
 
 function Map.GenerateCells(horizontal_cells, vertical_cells)
   local cells = {}
-  for i = 0, horizontal_cells do
-    for j = 0, vertical_cells do
+  for i = 0, horizontal_cells - 1 do
+    for j = 0, vertical_cells - 1 do
       table.insert(cells, MapPoint.new(i, j))
     end
   end
