@@ -12,7 +12,6 @@ map = nil
 function create_test_chars()
   local chars = {}
   local char = CharacterBase.new(5, 5, 'assets/characters/char.png')
-  -- char.path = { {["x"] = 3, ["y"] = 4}, {["x"] = 3, ["y"] = 5}, {["x"] = 4, ["y"] = 5}, {["x"] = 5, ["y"] = 5}, {["x"] = 6, ["y"] = 5}, {["x"] = 7, ["y"] = 5}}
   table.insert(chars, char)
   return chars
 end
@@ -21,7 +20,7 @@ function love.load(arg)
   UI.Init()
   
   -- For testing only
-  map = Map.new(Map.GenerateCells(horizontal_cells, vertical_cells), create_test_chars())
+  map = Map.new(Map.GenerateCells(horizontal_cells, vertical_cells), create_test_chars(), CharFinishedMove)
 end
 
 function love.update(dt)
@@ -33,7 +32,7 @@ function love.draw(dt)
 end
 
 function love.mousepressed(x, y, button, istouch)
-  if (button ~= 1 or not is_controlable) then
+  if (button ~= 1) then
     return
   end 
   
@@ -54,6 +53,7 @@ function love.mousepressed(x, y, button, istouch)
       elseif CharCanMoveThere(selected_char, map, cell_x, cell_y) then
         map:MoveChar(char, cell_x, cell_y)
         UI.UnselectChar()
+        UI.DisableControl()
       end 
     end
   else
@@ -66,6 +66,9 @@ function love.mousepressed(x, y, button, istouch)
   end
 end
 
+function CharFinishedMove()
+  UI.EnableControl()
+end
 
 function CharCanMoveThere(char, map, cell_x, cell_y)
   local reachable_points = map:GetCharMoveblePoints(char.cell_x, char.cell_y)

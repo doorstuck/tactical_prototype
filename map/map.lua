@@ -4,13 +4,14 @@ require "utils/path_finder"
 Map = {}
 Map.__index = Map
 
-function Map.new(cells, chars)
+function Map.new(cells, chars, char_moved_callback)
   local map = {}
   setmetatable(map, Map)
 
   map.cells = {}
   map.chars = {}
   map.paths = {}
+  map.char_moved_callback = char_moved_callback
   map:AddCells(cells)
   map:AddChars(chars)
   
@@ -81,6 +82,7 @@ function Map.UpdateCharPosition(map, prev_cell_x, prev_cell_y, new_cell_x, new_c
   
   -- update cached character path because she moved.
   map.paths[prev_hash] = nil
+  if map.char_moved_callback then map.char_moved_callback() end
 end
 
 function Map:GetCharMoveblePoints(cell_x, cell_y)

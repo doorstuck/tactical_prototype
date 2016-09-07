@@ -38,10 +38,12 @@ end
 
 function UI.EnableControl()
   is_controlable = false
+  love.mouse.setVisible(true)
 end
 
 function UI.DisableControl()
   is_controlable = true
+  love.mouse.setVisible(false)
 end
 
 -- PRIVATE --
