@@ -12,7 +12,12 @@ map = nil
 function create_test_chars()
   local chars = {}
   local char = CharacterBase.new(5, 5, 'assets/characters/char.png')
+  local char_2 = CharacterBase.new(10, 5, 'assets/characters/char.png')
+  local char_3 = CharacterBase.new(7, 7, 'assets/characters/char.png')
+  char_2.is_player_controlled = false
   table.insert(chars, char)
+  table.insert(chars, char_2)
+  table.insert(chars, char_3)
   return chars
 end
 
@@ -48,8 +53,10 @@ function love.mousepressed(x, y, button, istouch)
       char_on_place = map:GetChar(cell_x, cell_y)
       -- another char is selected.
       if char_on_place then
-        selected_char = char_on_place
-        UI.SelectChar(char_on_place)
+        if char_on_place.is_player_controlled then
+          UI.SelectChar(char_on_place)
+          selected_char = char_on_place
+        end
       elseif CharCanMoveThere(selected_char, map, cell_x, cell_y) then
         map:MoveChar(char, cell_x, cell_y)
         UI.UnselectChar()
@@ -59,7 +66,7 @@ function love.mousepressed(x, y, button, istouch)
   else
     -- No char is selected - the only thing we can do here is select a char on this spot.
     char_on_place = map:GetChar(cell_x, cell_y)
-    if char_on_place then
+    if char_on_place and char_on_place.is_player_controlled then
       UI.SelectChar(char_on_place)
       selected_char = char_on_place
     end

@@ -81,7 +81,7 @@ function Map.UpdateCharPosition(map, prev_cell_x, prev_cell_y, new_cell_x, new_c
   map.chars[prev_hash] = nil
   
   -- update cached character path because she moved.
-  map.paths[prev_hash] = nil
+  map.paths = {}
   if map.char_moved_callback then map.char_moved_callback() end
 end
 

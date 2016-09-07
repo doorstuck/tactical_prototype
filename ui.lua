@@ -22,6 +22,7 @@ function UI.Draw(map)
   UI.DrawBackground()
   UI.DrawGrid()
   UI.DrawCharacters(map)
+  UI.ColorSelectedCharCell()
   UI.DrawCharacterMoves(selected_char, map)
   UI.DrawMouseOverSquare()
 end

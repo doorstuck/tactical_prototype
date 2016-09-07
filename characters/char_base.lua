@@ -8,6 +8,7 @@ CharacterBase.__index = CharacterBase
 default_move_speed = (cell_size * 5)
 
 default_speed = 5
+default_hit_points = 10
 
 function CharacterBase.new(cell_x, cell_y, img_file, update_callback, updater)
   local char_base = {}
@@ -24,6 +25,7 @@ function CharacterBase.new(cell_x, cell_y, img_file, update_callback, updater)
   char_base.speed = default_speed
   char_base.action_points = default_speed
   char_base.is_player_controlled = true
+  char_base.hit_points = default_hit_points
   return char_base
 end
 
