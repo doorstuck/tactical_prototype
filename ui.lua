@@ -33,11 +33,13 @@ end
 
 function UI.SelectChar(char)
   selected_char = char
+  selected_skill = nil
   move_to_cells = nil
 end
 
 function UI.UnselectChar()
   selected_char = nil
+  selected_skill = nil
   move_to_cells = nil
 end
 
@@ -96,12 +98,30 @@ function UI.MousePressedSelectedChar(x, y, map)
 
   pressed_skill = UI.GetSkillForChar(x, y, selected_char)
   
-  if pressed_skill then
+  if pressed_skill and pressed_skill:CanUse(selected_char) then
     UI.SelectSkill(pressed_skill)
   end
 end
 
 function UI.MousePressedSelectedSkill(x, y, map)
+  cell_x, cell_y = get_cell_in(x, y)
+
+  if selected_skill.CanTarget(selected_char, map, cell_x, cell_y) then
+    selected_skill:Execute(selected_char, map, cell_x, cell_y)
+    return
+  end
+
+  pressed_skill = UI.GetSkillForChar(x, y, selected_char)
+  if not pressed_skill then
+    return
+  end
+
+  if not (pressed_skill == selected_skill) and pressed_skill:CanUse(selected_char) then
+    UI.SelectSkill(pressed_skill)
+    return
+  elseif pressed_skill == selected_skill then
+    UI.UnselectSkill()
+  end
 end
 
 function UI.GetSkillForChar(x, y, char)

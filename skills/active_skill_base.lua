@@ -25,7 +25,7 @@ function Skills.Active.ActiveSkillBase:PassTurn()
   end
 end
 
-function Skills.Active.ActiveSkillBase.CanUse(char)
+function Skills.Active.ActiveSkillBase:CanUse(char)
   return self.turns_till_cooldown <= 0
 end
 
@@ -51,7 +51,6 @@ function Skills.Active.ActiveSkillBase.IsEnemy(char, map, target_cell_x, target_
 end
 
 function Skills.Active.ActiveSkillBase:Draw(x, y)
-  LogDebug("Drawing skill at x " .. x .. " y " .. y)
   love.graphics.setColor(255, 255, 255)
   love.graphics.draw(self.img, x, y)
 end

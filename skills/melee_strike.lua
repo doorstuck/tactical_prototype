@@ -25,7 +25,7 @@ function Skills.Active.MeleeStrike.CellsEffected(map, char, target_cell_x, targe
 end
 
 function Skills.Active.MeleeStrike.CanTarget(char, map, target_cell_x, target_cell_y)
-  if not Skills.Active.ActiveSkillBase.IsEnemy() then return false end
+  if not Skills.Active.ActiveSkillBase.IsEnemy(char, map, target_cell_x, target_cell_y) then return false end
   if math.abs(target_cell_x - char.cell_x) <= 1 and math.abs(target_cell_y - char.cell_y) <= 1 then
     return true
   end
