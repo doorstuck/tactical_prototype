@@ -6,16 +6,18 @@ Skills.Active.MeleeStrike.__index =  Skills.Active.MeleeStrike
 
 Skills.Active.MeleeStrike.ap_cost = 3
 Skills.Active.MeleeStrike.damage = 4
+Skills.Active.MeleeStrike.img_src = '/assets/skills/sword.png'
 
 function Skills.Active.MeleeStrike.new()
-  skill = 
+  skill = {}
   setmetatable(skill, Skills.Active.MeleeStrike)
+  Skills.Active.ActiveSkillBase.new(skill)
   return skill
 end
 
 setmetatable(Skills.Active.MeleeStrike,{__index = Skills.Active.ActiveSkillBase})
 
-function Skills.Active.MeleeStike.CellsEffected(map, char, target_cell_x, target_cell_y)
+function Skills.Active.MeleeStrike.CellsEffected(map, char, target_cell_x, target_cell_y)
   result = {}
   point = MapPoint.new(target_cell_x, target_cell_y)
   table.insert(result, point)

@@ -5,8 +5,8 @@ require "map/map"
 require "map/map_point"
 require "utils/log"
 require "ui"
+require "skills/melee_strike"
 
-selected_char = nil
 map = nil
 
 function create_test_chars()
@@ -15,6 +15,8 @@ function create_test_chars()
   local char_2 = CharacterBase.new(10, 5, 'assets/characters/char.png')
   local char_3 = CharacterBase.new(7, 7, 'assets/characters/char.png')
   char_2.is_player_controlled = false
+  char.skills = {}
+  table.insert(char.skills, Skills.Active.MeleeStrike.new())
   table.insert(chars, char)
   table.insert(chars, char_2)
   table.insert(chars, char_3)
@@ -41,36 +43,8 @@ function love.mousepressed(x, y, button, istouch)
     return
   end 
   
-  cell_x, cell_y = get_cell_in(x, y)
-
-  if (selected_char) then
-    -- Selected char is pressed - deselect.
-    if selected_char.cell_x == cell_x and selected_char.cell_y == cell_y then
-      selected_char = nil
-      UI.UnselectChar()
-    -- char is selected but other point is pressed.
-    else
-      char_on_place = map:GetChar(cell_x, cell_y)
-      -- another char is selected.
-      if char_on_place then
-        if char_on_place.is_player_controlled then
-          UI.SelectChar(char_on_place)
-          selected_char = char_on_place
-        end
-      elseif CharCanMoveThere(selected_char, map, cell_x, cell_y) then
-        map:MoveChar(char, cell_x, cell_y)
-        UI.UnselectChar()
-        UI.DisableControl()
-      end 
-    end
-  else
-    -- No char is selected - the only thing we can do here is select a char on this spot.
-    char_on_place = map:GetChar(cell_x, cell_y)
-    if char_on_place and char_on_place.is_player_controlled then
-      UI.SelectChar(char_on_place)
-      selected_char = char_on_place
-    end
-  end
+  UI.MousePressed(x, y, map)
+  
 end
 
 function CharFinishedMove()

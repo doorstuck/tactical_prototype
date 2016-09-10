@@ -1,17 +1,18 @@
-require "skills/skills_base"
+require "skills/skill_base"
 
-Skill.Active.ActiveSkillBase = {}
+Skills = {}
+Skills.Active = {}
+Skills.Active.ActiveSkillBase = {}
 
 Skills.Active.ActiveSkillBase.__index = Skills.Active.ActiveSkillBase
 
 Skills.Active.ActiveSkillBase.cooldown = 0
 Skills.Active.ActiveSkillBase.ap_cost = 0
+Skills.Active.ActiveSkillBase.img_src = ""
 
-function Skills.Active.ActiveSkillBase.new()
-  local skill = {}
-  setmetatable(skill, Skills.Active.ActiveSkillBase)
+function Skills.Active.ActiveSkillBase.new(skill)
   skill.turns_till_cooldown = 0
-  return skill
+  skill.img = love.graphics.newImage(skill.img_src)
 end
 
 function Skills.Active.ActiveSkillBase.CanTarget(char, map, target_cell_x, target_cell_y)
@@ -47,4 +48,10 @@ function Skills.Active.ActiveSkillBase.IsEnemy(char, map, target_cell_x, target_
   target_char = map:GetChar(target_cell_x, target_cell_y)
   if not target_char then return false end
   return char.is_player_controlled and not target_char.is_player_controlled
+end
+
+function Skills.Active.ActiveSkillBase:Draw(x, y)
+  LogDebug("Drawing skill at x " .. x .. " y " .. y)
+  love.graphics.setColor(255, 255, 255)
+  love.graphics.draw(self.img, x, y)
 end

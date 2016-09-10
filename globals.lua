@@ -10,3 +10,6 @@ screen_height = screen_width + ui_size
 
 background_width = screen_width
 background_height = screen_width
+
+skill_icon_width = 64
+skill_icon_padding = 30
