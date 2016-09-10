@@ -108,6 +108,7 @@ function UI.MousePressedSelectedSkill(x, y, map)
 
   if selected_skill.CanTarget(selected_char, map, cell_x, cell_y) then
     selected_skill:Execute(selected_char, map, cell_x, cell_y)
+    UI.UnselectSkill()
     return
   end
 

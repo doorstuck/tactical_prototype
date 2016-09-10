@@ -41,4 +41,6 @@ function Skills.Active.MeleeStrike:Execute(char, map, target_cell_x, target_cell
   end
 
   target_char.hp = target_char.hp - self.damage
+
+  LogDebug("Hitting character for " .. self.damage .. ". Character now has " .. target_char.hp)
 end
