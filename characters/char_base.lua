@@ -23,7 +23,7 @@ function CharacterBase.new(cell_x, cell_y, img_file, update_callback, updater)
   char_base.update_callback = update_callback
   char_base.updater = updater
   char_base.speed = default_speed
-  char_base.action_points = default_speed
+  char_base.ap = default_speed
   char_base.is_player_controlled = true
   char_base.hp = default_hit_points
   return char_base
@@ -36,6 +36,7 @@ end
 
 function CharacterBase:SetPath(path)
   self.path = path
+  self.ap = self.ap - path:GetLength()
 end 
 
 function CharacterBase:Move(dt)
@@ -85,4 +86,21 @@ end
 
 function CharacterBase:MoveTowardsCoordinate(pixels_to_move, direction)
   return pixels_to_move * (direction > 0 and 1 or -1)
+end
+
+function CharacterBase:CanUseSkill(skill)
+  return self:CanUseSkillAfterMove(skill, 0 --[[ path length --]] )
+end
+
+function CharacterBase:CanUseSkillAfterMove(skill, path_length)
+  if self.ap < skill:GetApCost(self) + path_length then return false end
+
+  if not skill:CanUse(self) then return false end
+
+  return true
+end
+
+function CharacterBase:ExecuteSkill(skill, map, cell_x, cell_y)
+  self.ap = self.ap - skill.GetApCost(self, map, cell_x, cell_y)
+  skill:Execute(self, map, cell_x, cell_y)
 end

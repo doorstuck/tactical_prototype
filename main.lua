@@ -50,9 +50,3 @@ end
 function CharFinishedMove()
   UI.EnableControl()
 end
-
-function CharCanMoveThere(char, map, cell_x, cell_y)
-  local reachable_points = map:GetCharMoveblePoints(char.cell_x, char.cell_y)
-  if not reachable_points then return end
-  return reachable_points[MapPoint.CalculateHash(cell_x, cell_y)]
-end

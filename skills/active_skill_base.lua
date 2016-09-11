@@ -36,7 +36,7 @@ function Skills.Active.ActiveSkillBase.CellsEffected(map, char, target_cell_x, t
   return {}
 end
 
-function Skills.Active.ActiveSkillBase:GetApCost(char, map, target_cell_x, target_cell_y)
+function Skills.Active.ActiveSkillBase:GetApCost(char)
   return self.ap_cost
 end
 
@@ -50,7 +50,11 @@ function Skills.Active.ActiveSkillBase.IsEnemy(char, map, target_cell_x, target_
   return char.is_player_controlled and not target_char.is_player_controlled
 end
 
-function Skills.Active.ActiveSkillBase:Draw(x, y)
-  love.graphics.setColor(255, 255, 255)
+function Skills.Active.ActiveSkillBase:Draw(x, y, disabled)
+  if disabled then
+    love.graphics.setColor(255, 255, 255, 100)
+  else
+    love.graphics.setColor(255, 255, 255)
+  end
   love.graphics.draw(self.img, x, y)
 end

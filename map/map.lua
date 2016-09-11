@@ -93,7 +93,7 @@ function Map:GetCharMoveblePoints(cell_x, cell_y)
   points = self.paths[char_point_hash]
   if (points) then return points end
 
-  points = PathFinder.FindAllReachablePoints(self, MapPoint.new(cell_x, cell_y), char.action_points)
+  points = PathFinder.FindAllReachablePoints(self, MapPoint.new(cell_x, cell_y), char.ap)
 
   self.paths[char_point_hash] = points
 

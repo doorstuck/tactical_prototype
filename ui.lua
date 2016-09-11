@@ -26,8 +26,8 @@ function UI.Draw(map)
   UI.DrawCharacters(map)
   UI.ColorSelectedCharCell()
   UI.DrawCharacterMoves(selected_char, map)
-  UI.DrawMouseOverSquare()
-  UI.DrawSkills()
+  UI.DrawMouseOverSquare(map)
+  UI.DrawSkills(map)
   UI.ColorSelectedSkill()
 end
 
@@ -85,11 +85,17 @@ function UI.MousePressedSelectedChar(x, y, map)
   cell_x, cell_y = get_cell_in(x, y)
   char_on_place = map:GetChar(cell_x, cell_y)
   
+  if char_on_place == selected_char then
+    UI.UnselectChar()
+    return
+  end
+  
   if char_on_place and char_on_place.is_player_controlled then
     UI.SelectChar(char_on_place)
     return
   end
-  if CharCanMoveThere(selected_char, map, cell_x, cell_y) then
+
+  if UI.CharCanMoveThere(selected_char, map, cell_x, cell_y) then
     map:MoveChar(selected_char, cell_x, cell_y)
     UI.UnselectChar()
     UI.DisableControl()
@@ -98,7 +104,7 @@ function UI.MousePressedSelectedChar(x, y, map)
 
   pressed_skill = UI.GetSkillForChar(x, y, selected_char)
   
-  if pressed_skill and pressed_skill:CanUse(selected_char) then
+  if pressed_skill and selected_char:CanUseSkill(pressed_skill) then
     UI.SelectSkill(pressed_skill)
   end
 end
@@ -107,7 +113,7 @@ function UI.MousePressedSelectedSkill(x, y, map)
   cell_x, cell_y = get_cell_in(x, y)
 
   if selected_skill.CanTarget(selected_char, map, cell_x, cell_y) then
-    selected_skill:Execute(selected_char, map, cell_x, cell_y)
+    selected_char:ExecuteSkill(skill, map, cell_x, cell_y)
     UI.UnselectSkill()
     return
   end
@@ -117,7 +123,7 @@ function UI.MousePressedSelectedSkill(x, y, map)
     return
   end
 
-  if not (pressed_skill == selected_skill) and pressed_skill:CanUse(selected_char) then
+  if not (pressed_skill == selected_skill) and selected_char:CanUseSkill(pressed_skill) then
     UI.SelectSkill(pressed_skill)
     return
   elseif pressed_skill == selected_skill then
@@ -142,6 +148,7 @@ end
 
 function UI.DrawCharacterMoves(char, map)
   if not char then return end
+  if selected_skill then return end
   if not move_to_cells then move_to_cells = map:GetCharMoveblePoints(char.cell_x, char.cell_y) end
   
   for cell_hash, cell_info in pairs(move_to_cells) do
@@ -167,16 +174,51 @@ function UI.DrawBackground()
   love.graphics.draw(background_img, background_quad, 0, 0)
 end
 
-function UI.DrawMouseOverSquare()
+function UI.DrawMouseOverSquare(map)
   cell_x, cell_y = get_cell_in(love.mouse.getPosition())
-  UI.DrawMouseOverChar(cell_x, cell_y)
-  UI.DrawMouseOverMovableSquares(cell_x, cell_y)
+  UI.DrawMouseOverChar(map, cell_x, cell_y)
+  UI.DrawMouseOverMovableSquares(map, cell_x, cell_y)
+  UI.DrawMouseOverSkillSqure(map, cell_x, cell_y)
 end
 
-function UI.DrawMouseOverChar()
+function UI.DrawMouseOverChar(map, cell_x, cell_y)
+  if selected_skill then return end
+  local char = map:GetChar(cell_x, cell_y)
+  if not char or not char.is_player_controlled then return end
+  
+  UI.ColorCell(cell_x, cell_y, 0, 200, 100, 100)
 end
 
-function UI.DrawMouseOverMovableSquares()
+function UI.DrawMouseOverMovableSquares(map, cell_x, cell_y)
+  if not selected_char then return end
+  if selected_skill then return end
+  
+  local reachable_points = map:GetCharMoveblePoints(char.cell_x, char.cell_y)
+  if not reachable_points then return end
+  if not reachable_points[MapPoint.CalculateHash(cell_x, cell_y)] then return end
+
+  UI.ColorCell(cell_x, cell_y, 0, 0, 200, 100)
+end
+
+function UI.DrawMouseOverMovableSquares(map, cell_x, cell_y)
+  if not selected_char then return end
+  if selected_skill then return end
+  
+  local reachable_points = map:GetCharMoveblePoints(char.cell_x, char.cell_y)
+  if not reachable_points then return end
+  if not reachable_points[MapPoint.CalculateHash(cell_x, cell_y)] then return end
+
+  UI.ColorCell(cell_x, cell_y, 0, 0, 200, 100)
+end
+
+function UI.DrawMouseOverSkillSqure(map, cell_x, cell_y)
+  if not selected_skill then return end
+  
+  if not selected_skill.CanTarget(selected_char, map, cell_x, cell_y) then return end
+  
+  for i, cell in pairs(selected_skill.CellsEffected(selected_char, map, cell_x, cell_y)) do
+    UI.ColorCell(cell.cell_x, cell.cell_y, 250, 0, 0, 100)
+  end
 end
 
 function UI.DrawCharacters(map)
@@ -223,11 +265,48 @@ function UI.GetSkillCoordinates(char, skill)
   return nil
 end
 
-function UI.DrawSkills()
+function UI.DrawSkills(map)
   if not selected_char or not selected_char.skills then return end
   left_padding = skill_icon_padding
   for i, skill in pairs(selected_char.skills) do
-    skill:Draw(left_padding, background_height + skill_icon_padding)
+    local enabled = UI.DrawSkillEnabled(selected_char, skill, map)
+    skill:Draw(left_padding, background_height + skill_icon_padding, not enabled)
     left_padding = left_padding + skill_icon_width + skill_icon_padding
   end
+end
+
+function UI.DrawSkillEnabled(char, skill, map)
+  -- Returns wheter we should draw skill disabled when we do.
+  
+  if selected_skill then
+    -- We are in mode where skill is selected. It means that skill
+    -- should be disabled only if character cannot use it.
+    return char:CanUseSkill(skill)
+  elseif selected_char then
+    -- We are in selected char mode. In that case if char moves
+    -- to a square we need to know how many action points he will
+    -- use to move there.
+    cell_x, cell_y = get_cell_in(love.mouse.getPosition())
+    path_length = UI.GetPathLengthTo(char, map, cell_x, cell_y)
+    
+    if not path_length then
+      return char:CanUseSkill(skill)
+    else
+      return char:CanUseSkillAfterMove(skill, path_length)
+    end
+  end
+
+  return true
+end
+
+function UI.GetPathLengthTo(char, map, cell_x, cell_y)
+  local point_to = UI.CharCanMoveThere(char, map, cell_x, cell_y)
+  if not point_to then return nil end
+  return point_to.path_length
+end
+
+function UI.CharCanMoveThere(char, map, cell_x, cell_y)
+  local reachable_points = map:GetCharMoveblePoints(char.cell_x, char.cell_y)
+  if not reachable_points then return end
+  return reachable_points[MapPoint.CalculateHash(cell_x, cell_y)]
 end

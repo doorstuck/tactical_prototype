@@ -17,7 +17,7 @@ end
 
 setmetatable(Skills.Active.MeleeStrike,{__index = Skills.Active.ActiveSkillBase})
 
-function Skills.Active.MeleeStrike.CellsEffected(map, char, target_cell_x, target_cell_y)
+function Skills.Active.MeleeStrike.CellsEffected(char, map, target_cell_x, target_cell_y)
   result = {}
   point = MapPoint.new(target_cell_x, target_cell_y)
   table.insert(result, point)
