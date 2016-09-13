@@ -9,8 +9,6 @@ background_quad = nil
 selected_char = nil
 selected_skill = nil
 
-move_to_cells = {}
-
 is_controlable = true
 is_move_mode = false
 
@@ -29,18 +27,17 @@ function UI.Draw(map)
   UI.DrawMouseOverSquare(map)
   UI.DrawSkills(map)
   UI.ColorSelectedSkill()
+  UI.DrawCharsHP(map)
 end
 
 function UI.SelectChar(char)
   selected_char = char
   selected_skill = nil
-  move_to_cells = nil
 end
 
 function UI.UnselectChar()
   selected_char = nil
   selected_skill = nil
-  move_to_cells = nil
 end
 
 function UI.SelectSkill(skill)
@@ -113,7 +110,7 @@ function UI.MousePressedSelectedSkill(x, y, map)
   cell_x, cell_y = get_cell_in(x, y)
 
   if selected_skill.CanTarget(selected_char, map, cell_x, cell_y) then
-    selected_char:ExecuteSkill(skill, map, cell_x, cell_y)
+    map:ExecuteCharSkill(selected_char, selected_skill, cell_x, cell_y)
     UI.UnselectSkill()
     return
   end
@@ -149,7 +146,7 @@ end
 function UI.DrawCharacterMoves(char, map)
   if not char then return end
   if selected_skill then return end
-  if not move_to_cells then move_to_cells = map:GetCharMoveblePoints(char.cell_x, char.cell_y) end
+  local move_to_cells = map:GetCharMoveblePoints(char.cell_x, char.cell_y)
   
   for cell_hash, cell_info in pairs(move_to_cells) do
     UI.ColorCell(cell_info.point.cell_x, cell_info.point.cell_y, 0, 0, 150, 100)
@@ -309,4 +306,23 @@ function UI.CharCanMoveThere(char, map, cell_x, cell_y)
   local reachable_points = map:GetCharMoveblePoints(char.cell_x, char.cell_y)
   if not reachable_points then return end
   return reachable_points[MapPoint.CalculateHash(cell_x, cell_y)]
+end
+
+function UI.DrawCharsHP(map)
+  local cells_affected_by_skill = {}
+  if selected_skill then
+    cell_x, cell_y = get_cell_in(love.mouse.getPosition())
+    cells_affected_by_skill = selected_skill.CellsEffected(selected_char, map, cell_x, cell_y)
+  end
+  
+  for i, char in pairs(map.chars) do
+    minus_hp = 0
+    for j, cell in pairs(cells_affected_by_skill) do
+      if cell.cell_x == char.cell_x and cell.cell_y == char.cell_y then
+        minus_hp = selected_skill:GetDamage(selected_char)
+      end
+    end
+
+    char:DrawHP(minus_hp)
+  end
 end

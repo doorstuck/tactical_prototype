@@ -7,8 +7,8 @@ CharacterBase.__index = CharacterBase
 -- This means that character moves 2 cells per second.
 default_move_speed = (cell_size * 5)
 
-default_speed = 5
-default_hit_points = 10
+default_speed = 8
+default_hit_points = 25
 
 function CharacterBase.new(cell_x, cell_y, img_file, update_callback, updater)
   local char_base = {}
@@ -36,8 +36,34 @@ end
 
 function CharacterBase:SetPath(path)
   self.path = path
-  self.ap = self.ap - path:GetLength()
+  -- -1 because it also contains start point, which we don't want to count.
+  self.ap = self.ap - (path:GetLength() - 1)
 end 
+
+function CharacterBase:DrawHP(hp_targeted)
+  if not hp_targeted then hp_targeted = 0 end
+  local hp_left_to_show = self.hp
+  local x = self.x + hp_rect_padding
+  local y = self.y + hp_rect_padding
+  while (hp_left_to_show > 0) do
+    if hp_left_to_show <= hp_targeted then
+      love.graphics.setColor(230, 100, 0, 250)
+    else
+      love.graphics.setColor(0, 255, 0, 250)
+    end
+    love.graphics.rectangle("fill", x + 1, y + 1, hp_rect_width - 1, hp_rect_width - 1)
+    love.graphics.setColor(0, 0, 0, 255)
+    love.graphics.rectangle("line", x, y, hp_rect_width, hp_rect_width)
+    x = x + hp_rect_padding + hp_rect_width
+    if (x - self.x + hp_rect_width > cell_size - (2 * hp_rect_padding)) then
+      -- Need to advance to the next row.
+      y = y + hp_rect_width + hp_rect_padding
+      x = self.x + hp_rect_padding
+    end
+
+    hp_left_to_show = hp_left_to_show - 1
+  end
+end
 
 function CharacterBase:Move(dt)
   if not self.path or self.path:IsEmpty() then return end
@@ -101,6 +127,6 @@ function CharacterBase:CanUseSkillAfterMove(skill, path_length)
 end
 
 function CharacterBase:ExecuteSkill(skill, map, cell_x, cell_y)
-  self.ap = self.ap - skill.GetApCost(self, map, cell_x, cell_y)
+  self.ap = self.ap - skill:GetApCost(self)
   skill:Execute(self, map, cell_x, cell_y)
 end

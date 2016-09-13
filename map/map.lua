@@ -100,6 +100,10 @@ function Map:GetCharMoveblePoints(cell_x, cell_y)
   return points
 end
 
+function Map:ExecuteCharSkill(char, skill, cell_x, cell_y)
+  char:ExecuteSkill(skill, self, cell_x, cell_y)
+  self.paths[MapPoint.CalculateHash(char.cell_x, char.cell_y)] = nil
+end
 
 function Map:MoveChar(char, cell_x, cell_y)
   paths = self.paths[MapPoint.CalculateHash(char.cell_x, char.cell_y)] 

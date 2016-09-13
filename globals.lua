@@ -13,3 +13,6 @@ background_height = screen_width
 
 skill_icon_width = 64
 skill_icon_padding = 30
+
+hp_rect_width = 4
+hp_rect_padding = 2

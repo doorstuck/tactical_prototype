@@ -8,6 +8,7 @@ Skills.Active.ActiveSkillBase.__index = Skills.Active.ActiveSkillBase
 
 Skills.Active.ActiveSkillBase.cooldown = 0
 Skills.Active.ActiveSkillBase.ap_cost = 0
+Skills.Active.ActiveSkillBase.damage = 0
 Skills.Active.ActiveSkillBase.img_src = ""
 
 function Skills.Active.ActiveSkillBase.new(skill)
@@ -38,6 +39,10 @@ end
 
 function Skills.Active.ActiveSkillBase:GetApCost(char)
   return self.ap_cost
+end
+
+function Skills.Active.ActiveSkillBase:GetDamage(char)
+  return self.damage
 end
 
 function Skills.Active.ActiveSkillBase:Execute(char, map, target_cell_x, target_cell_y)
