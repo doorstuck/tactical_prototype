@@ -6,6 +6,7 @@ require "map/map_point"
 require "utils/log"
 require "ui"
 require "skills/melee_strike"
+require "skills/fireball"
 
 map = nil
 
@@ -15,8 +16,8 @@ function create_test_chars()
   local char_2 = CharacterBase.new(10, 5, 'assets/characters/char.png')
   local char_3 = CharacterBase.new(7, 7, 'assets/characters/char.png')
   char_2.is_player_controlled = false
-  char.skills = {}
   table.insert(char.skills, Skills.Active.MeleeStrike.new())
+  table.insert(char_3.skills, Skills.Active.Fireball.new())
   table.insert(chars, char)
   table.insert(chars, char_2)
   table.insert(chars, char_3)

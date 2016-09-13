@@ -26,6 +26,7 @@ function CharacterBase.new(cell_x, cell_y, img_file, update_callback, updater)
   char_base.ap = default_speed
   char_base.is_player_controlled = true
   char_base.hp = default_hit_points
+  char_base.skills = {}
   return char_base
 end
 
