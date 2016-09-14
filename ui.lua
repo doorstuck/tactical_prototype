@@ -71,10 +71,16 @@ end
 
 -- PRIVATE --
 
+function UI.IsCharSelectable(char)
+  if not char or not char.is_player_controlled then return false end
+  if char.ap <= 0 then return false end
+  return true
+end
+
 function UI.MousePressedNormal(x, y, map)
   cell_x, cell_y = get_cell_in(x, y)
   char_on_place = map:GetChar(cell_x, cell_y)
-  if not char_on_place or not char_on_place.is_player_controlled then return end
+  if not UI.IsCharSelectable(char_on_place) then return end
 
   UI.SelectChar(char_on_place)
 end
@@ -88,7 +94,7 @@ function UI.MousePressedSelectedChar(x, y, map)
     return
   end
   
-  if char_on_place and char_on_place.is_player_controlled then
+  if UI.IsCharSelectable(char_on_place) then 
     UI.SelectChar(char_on_place)
     return
   end
@@ -182,7 +188,7 @@ end
 function UI.DrawMouseOverChar(map, cell_x, cell_y)
   if selected_skill then return end
   local char = map:GetChar(cell_x, cell_y)
-  if not char or not char.is_player_controlled then return end
+  if not UI.IsCharSelectable(char) then return end
   
   UI.ColorCell(cell_x, cell_y, 0, 200, 100, 100)
 end
