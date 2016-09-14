@@ -23,6 +23,7 @@ function CharacterBase.new(cell_x, cell_y, img_file, update_callback, updater)
   char_base.update_callback = update_callback
   char_base.updater = updater
   char_base.speed = default_speed
+  char_base.max_ap = default_speed
   char_base.ap = default_speed
   char_base.is_player_controlled = true
   char_base.hp = default_hit_points
@@ -63,6 +64,29 @@ function CharacterBase:DrawHP(hp_targeted)
     end
 
     hp_left_to_show = hp_left_to_show - 1
+  end
+end
+
+function CharacterBase:DrawAP(ap_spent)
+  if not ap_spent then ap_spent = 0 end
+  local x = ap_left_padding
+  local y = screen_height - ap_bottom_padding - ap_size
+  
+  for i = 1, self.max_ap do
+    if i > self.ap then
+      -- action points already spent.
+      love.graphics.setColor(230, 230, 230, 230)
+    elseif i > self.ap - ap_spent then
+      -- action points about to be spent.
+      love.graphics.setColor(200, 180, 0, 150)
+    else
+      -- action points left.
+      love.graphics.setColor(200, 200, 0, 255)
+    end
+    
+    love.graphics.rectangle("fill", x, y, ap_size, ap_size)
+    
+    x = x + ap_side_padding + ap_size
   end
 end
 

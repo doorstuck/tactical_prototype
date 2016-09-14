@@ -106,16 +106,24 @@ function Map:ExecuteCharSkill(char, skill, cell_x, cell_y)
 end
 
 function Map:MoveChar(char, cell_x, cell_y)
-  paths = self.paths[MapPoint.CalculateHash(char.cell_x, char.cell_y)] 
-  if not paths then
+  path = self:GetPathForChar(char, cell_x, cell_y)
+  if not path then
     LogError("Tried to move char to a position that she cannot move to.")
     LogError("Char x: " .. char.cell_x .. " y: " .. char.cell_y)
     LogError("Destination: x: " .. cell_x .. " y: " .. cell_y)
     return
   end
   
-  path = Map.PointToMoveVector(paths, cell_x, cell_y)
   char:SetPath(path)
+end
+
+function Map:GetPathForChar(char, cell_x, cell_y)
+  local points = self.paths[MapPoint.CalculateHash(char.cell_x, char.cell_y)] 
+  if not points then
+    return nil
+  end
+
+  return Map.PointToMoveVector(points, cell_x, cell_y)
 end
 
 function Map.PointToMoveVector(points, dest_cell_x, dest_cell_y)
@@ -123,9 +131,16 @@ function Map.PointToMoveVector(points, dest_cell_x, dest_cell_y)
   list = List.new()
   prev_point = MapPoint.new(dest_cell_x, dest_cell_y)
   while (prev_point) do
+    LogDebug(MapPoint)
     list:InsertFirst(prev_point)
-    prev_point = points[MapPoint.CalculateHash(prev_point.cell_x, prev_point.cell_y)].prev_point
+    curr_point = points[MapPoint.CalculateHash(prev_point.cell_x, prev_point.cell_y)]
+    if not curr_point then
+      -- impossible to reach original point from this destination.
+      return nil
+    end
+    prev_point = curr_point.prev_point
   end
 
+  if list:IsEmpty() then return nil end
   return list
 end

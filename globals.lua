@@ -16,3 +16,8 @@ skill_icon_padding = 30
 
 hp_rect_width = 4
 hp_rect_padding = 2
+
+ap_size = 12 
+ap_left_padding = 30
+ap_side_padding = 6
+ap_bottom_padding = 30

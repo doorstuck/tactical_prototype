@@ -28,6 +28,7 @@ function UI.Draw(map)
   UI.DrawSkills(map)
   UI.ColorSelectedSkill()
   UI.DrawCharsHP(map)
+  UI.DrawCharsAP(map)
 end
 
 function UI.SelectChar(char)
@@ -325,4 +326,20 @@ function UI.DrawCharsHP(map)
 
     char:DrawHP(minus_hp)
   end
+end
+
+function UI.DrawCharsAP(map)
+  ap_spent = 0
+  if selected_skill then
+    ap_spent = selected_skill:GetApCost(selected_char)
+  elseif selected_char then
+    cell_x, cell_y = get_cell_in(love.mouse.getPosition())
+    local path = map:GetPathForChar(selected_char, cell_x, cell_y)
+    if path then ap_spent = path:GetLength() - 1 end
+  else
+    -- Char is not selected, so don't need to draw action points.
+    return
+  end
+
+  selected_char:DrawAP(ap_spent)
 end
