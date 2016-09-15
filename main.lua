@@ -7,8 +7,11 @@ require "utils/log"
 require "ui"
 require "skills/melee_strike"
 require "skills/fireball"
+require "ai/ai_main"
 
 map = nil
+ai = nil
+is_player_turn = true
 
 function create_test_chars()
   local chars = {}
@@ -25,10 +28,11 @@ function create_test_chars()
 end
 
 function love.load(arg)
-  UI.Init()
+  UI.Init(PassTurn)
   
   -- For testing only
-  map = Map.new(Map.GenerateCells(horizontal_cells, vertical_cells), create_test_chars(), CharFinishedMove)
+  map = Map.new(Map.GenerateCells(horizontal_cells, vertical_cells), create_test_chars(), CharFinishedMove, PassTurn)
+  ai = AI.new()
 end
 
 function love.update(dt)
@@ -37,6 +41,13 @@ end
 
 function love.draw(dt)
   UI.Draw(map)
+end
+
+function PassTurn()
+  UI.DisableControl()
+  AI.MakeTurn()
+  UI.EnableControl()
+  map:PassTurn()
 end
 
 function love.mousepressed(x, y, button, istouch)

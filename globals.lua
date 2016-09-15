@@ -21,3 +21,7 @@ ap_size = 12
 ap_left_padding = 30
 ap_side_padding = 6
 ap_bottom_padding = 30
+
+end_turn_button_x = screen_width - 150
+end_turn_button_y = background_height + 30
+end_turn_button_size = 128

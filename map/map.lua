@@ -4,7 +4,7 @@ require "utils/path_finder"
 Map = {}
 Map.__index = Map
 
-function Map.new(cells, chars, char_moved_callback)
+function Map.new(cells, chars, char_moved_callback, pass_turn_callback)
   local map = {}
   setmetatable(map, Map)
 
@@ -12,10 +12,17 @@ function Map.new(cells, chars, char_moved_callback)
   map.chars = {}
   map.paths = {}
   map.char_moved_callback = char_moved_callback
+  map.pass_turn_callback = pass_turn_callback
   map:AddCells(cells)
   map:AddChars(chars)
   
   return map
+end
+
+function Map:PassTurn()
+  for i, char in pairs(self.chars) do
+    char:PassTurn()
+  end
 end
 
 function Map:IsPassable(cell_x, cell_y)
@@ -83,6 +90,7 @@ function Map.UpdateCharPosition(map, prev_cell_x, prev_cell_y, new_cell_x, new_c
   -- update cached character path because she moved.
   map.paths = {}
   if map.char_moved_callback then map.char_moved_callback() end
+  map:EndPlayerTurnIfNeeded()
 end
 
 function Map:GetCharMoveblePoints(cell_x, cell_y)
@@ -103,6 +111,16 @@ end
 function Map:ExecuteCharSkill(char, skill, cell_x, cell_y)
   char:ExecuteSkill(skill, self, cell_x, cell_y)
   self.paths[MapPoint.CalculateHash(char.cell_x, char.cell_y)] = nil
+  self:RemoveDeadChars()
+  self:EndPlayerTurnIfNeeded()
+end
+
+function Map:RemoveDeadChars()
+  for i, char in pairs(self.chars) do
+    if char.hp <= 0 then
+      self.chars[i] = nil
+    end
+  end
 end
 
 function Map:MoveChar(char, cell_x, cell_y)
@@ -131,7 +149,6 @@ function Map.PointToMoveVector(points, dest_cell_x, dest_cell_y)
   list = List.new()
   prev_point = MapPoint.new(dest_cell_x, dest_cell_y)
   while (prev_point) do
-    LogDebug(MapPoint)
     list:InsertFirst(prev_point)
     curr_point = points[MapPoint.CalculateHash(prev_point.cell_x, prev_point.cell_y)]
     if not curr_point then
@@ -143,4 +160,17 @@ function Map.PointToMoveVector(points, dest_cell_x, dest_cell_y)
 
   if list:IsEmpty() then return nil end
   return list
+end
+
+function Map:EndPlayerTurnIfNeeded()
+  local player_chars_active = false
+  for i, char in pairs(self.chars) do
+    if char.is_player_controlled and char.ap > 0 then
+      player_chars_active = true
+    end
+  end
+  
+  if not player_chars_active then
+    self:pass_turn_callback()
+  end
 end

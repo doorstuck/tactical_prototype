@@ -155,3 +155,11 @@ function CharacterBase:ExecuteSkill(skill, map, cell_x, cell_y)
   self.ap = self.ap - skill:GetApCost(self)
   skill:Execute(self, map, cell_x, cell_y)
 end
+
+function CharacterBase:PassTurn()
+  for i, skill in pairs(self.skills) do
+    skill:PassTurn()
+  end
+  
+  self.ap = self.max_ap
+end

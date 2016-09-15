@@ -12,10 +12,14 @@ selected_skill = nil
 is_controlable = true
 is_move_mode = false
 
-function UI.Init()
+function UI.Init(end_turn_callback)
   love.graphics.setBlendMode("alpha")
   background_img = love.graphics.newImage('assets/background/grass.jpg')
   background_quad = love.graphics.newQuad(0, 0, background_width, background_height, background_img:getDimensions())
+
+  end_turn_button_img = love.graphics.newImage('assets/icons/end_turn.png')
+  
+  end_turn_call= end_turn_callback
 end
 
 function UI.Draw(map)
@@ -29,6 +33,7 @@ function UI.Draw(map)
   UI.ColorSelectedSkill()
   UI.DrawCharsHP(map)
   UI.DrawCharsAP(map)
+  UI.DrawEndTurnButton()
 end
 
 function UI.SelectChar(char)
@@ -60,6 +65,10 @@ function UI.DisableControl()
 end
 
 function UI.MousePressed(x, y, map)
+  if UI.EndTurnPressed(x, y) then
+    end_turn_call()
+    return
+  end
   if not selected_char then
     UI.MousePressedNormal(x, y, map)
   elseif selected_char and not selected_skill then
@@ -348,4 +357,13 @@ function UI.DrawCharsAP(map)
   end
 
   selected_char:DrawAP(ap_spent)
+end
+
+function UI.DrawEndTurnButton()
+  love.graphics.setColor(255, 255, 255)
+  love.graphics.draw(end_turn_button_img, end_turn_button_x, end_turn_button_y)
+end
+
+function UI.EndTurnPressed(x, y)
+  return (x >= end_turn_button_x and x <= end_turn_button_x + end_turn_button_size) and (y >= end_turn_button_y and y <= end_turn_button_y + end_turn_button_size)
 end
