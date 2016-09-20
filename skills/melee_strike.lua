@@ -17,22 +17,6 @@ end
 
 setmetatable(Skills.Active.MeleeStrike,{__index = Skills.Active.ActiveSkillBase})
 
-function Skills.Active.MeleeStrike.CellsEffected(char, map, target_cell_x, target_cell_y)
-  result = {}
-  point = MapPoint.new(target_cell_x, target_cell_y)
-  table.insert(result, point)
-  return result
-end
-
-function Skills.Active.MeleeStrike.CanTarget(char, map, target_cell_x, target_cell_y)
-  if not Skills.Active.ActiveSkillBase.IsEnemy(char, map, target_cell_x, target_cell_y) then return false end
-  if math.abs(target_cell_x - char.cell_x) <= 1 and math.abs(target_cell_y - char.cell_y) <= 1 then
-    return true
-  end
-  
-  return false
-end
-
 function Skills.Active.MeleeStrike:Execute(char, map, target_cell_x, target_cell_y)
   target_char = map:GetChar(target_cell_x, target_cell_y)
   if not target_char then

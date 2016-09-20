@@ -125,7 +125,7 @@ end
 function UI.MousePressedSelectedSkill(x, y, map)
   cell_x, cell_y = get_cell_in(x, y)
 
-  if selected_skill.CanTarget(selected_char, map, cell_x, cell_y) then
+  if selected_skill:CanTarget(selected_char, map, cell_x, cell_y) then
     map:ExecuteCharSkill(selected_char, selected_skill, cell_x, cell_y)
     UI.UnselectSkill()
     return
@@ -227,9 +227,9 @@ end
 function UI.DrawMouseOverSkillSqure(map, cell_x, cell_y)
   if not selected_skill then return end
   
-  if not selected_skill.CanTarget(selected_char, map, cell_x, cell_y) then return end
+  if not selected_skill:CanTarget(selected_char, map, cell_x, cell_y) then return end
   
-  for i, cell in pairs(selected_skill.CellsEffected(selected_char, map, cell_x, cell_y)) do
+  for i, cell in pairs(selected_skill:CellsAffected(selected_char, map, cell_x, cell_y)) do
     UI.ColorCell(cell.cell_x, cell.cell_y, 250, 0, 0, 100)
   end
 end
@@ -328,7 +328,9 @@ function UI.DrawCharsHP(map)
   local cells_affected_by_skill = {}
   if selected_skill then
     cell_x, cell_y = get_cell_in(love.mouse.getPosition())
-    cells_affected_by_skill = selected_skill.CellsEffected(selected_char, map, cell_x, cell_y)
+    if selected_skill:CanTarget(selected_char, map, cell_x, cell_y) then
+      cells_affected_by_skill = selected_skill:CellsAffected(selected_char, map, cell_x, cell_y)
+    end
   end
   
   for i, char in pairs(map.chars) do
