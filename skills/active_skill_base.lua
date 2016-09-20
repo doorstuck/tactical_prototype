@@ -106,7 +106,6 @@ function Skills.Active.ActiveSkillBase:CellsAffected(char, map, target_cell_x, t
   local mod = (self.diameter - 1) % 2
   local start = math.floor((self.diameter - 1) / 2)
   local finish = math.floor((self.diameter - 1) / 2) + mod
-  LogDebug("start " .. start .. " finish " .. finish .. " mod " .. mod)
 
   for cell_x = target_cell_x - start, target_cell_x + finish, 1 do
     for cell_y = target_cell_y - start, target_cell_y + finish, 1 do
