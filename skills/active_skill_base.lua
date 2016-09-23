@@ -32,13 +32,6 @@ function Skills.Active.ActiveSkillBase:CanUse(char)
   return self.turns_till_cooldown <= 0
 end
 
-function Skills.Active.ActiveSkillBase.CellsEffected(map, char, target_cell_x, target_cell_y)
-  -- Input arguments: map, character that uses that skill (in case she has any passive skills
-  -- that can change the effect of that skill), and target cell.
-  -- Returns Array of cells that are affected by this skill.
-  return {}
-end
-
 function Skills.Active.ActiveSkillBase:GetApCost(char)
   return self.ap_cost
 end
@@ -93,6 +86,9 @@ function Skills.Active.ActiveSkillBase:GetDistance()
 end
 
 function Skills.Active.ActiveSkillBase:CellsAffected(char, map, target_cell_x, target_cell_y)
+  -- Input arguments: map, character that uses that skill (in case she has any passive skills
+  -- that can change the effect of that skill), and target cell.
+  -- Returns Array of cells that are affected by this skill.
   result = {}
   if self.diameter == 0 then
     point = MapPoint.new(target_cell_x, target_cell_y)
