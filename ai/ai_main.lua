@@ -57,9 +57,56 @@ function AI:WhatToAttack(char, map)
 end
 
 function AI:CalculateTurnForChar(char, map)
+  local best_move_point = nil
+  local best_attack_point = nil
+  local best_skill = nil
+  local best_score = nil
+
   local reachable_points = map:GetCharMovebalePoints(char)
+
   for i, skill in pairs(char.skills) do
+    if not skill:GetApCost(char) > char.ap then
+      local new_move, new_attack, new_score = self:GetBestPointForSkill(char, map, skill, reachable_points)
+      if new_score and (not best_score or new_score > best_score) then
+        best_move = new_move
+        best_attack_point = new_attack
+        best_skill = skill
+        best_score = new_score
+      end
+    end
   end
+  
+  if best_move_point.cell_x == char.cell_x and best_move_point.cell_y == char.cell_y then
+    best_move_point = nil
+  end
+
+  self.move_to_point = best_move_point
+  self.target_skill = best_skill
+  self.target_point = best_attack_point
+end
+
+function AI:GetBestPointForSkill(char, map, skill, reachable_points)
+  -- Given a skill for a char, calculates the best move and attack points
+  -- and returns a score for it.
+  local best_move_point = nil
+  local best_attack_point = nil
+  local best_score = nil
+
+  local points_to_attack = self:GetPointsThatCanBeTargeted(char, map, skill)
+  for i, target_point in pairs(points_to_attack) do
+    local points_to_attack_from = self:GetPointsToMoveForAttack(char, map, skill, target_point, reachable_points)
+    local closest_point = AI.FindPointWithLessPath(points_to_attack_from, reachable_points)
+    if closest_point and closest_point.path_length < char.ap - skill:GetApCost(char) then
+      local new_score = AI.CalculateScore(target_point, skill, map, closest_point, char)
+      if best_score == nil or best_score < new_score then
+        best_score = new_score
+        best_attack_point = target_point
+        best_move_point = closest_point
+      end
+    end
+  end
+
+  return best_move_point, best_attack_point, best_score
 end
 
 function AI.CalculateScore(target_point, skill, map, move_to_point, char)
@@ -74,7 +121,7 @@ function AI.CalculateScore(target_point, skill, map, move_to_point, char)
         score = score + hit_hp_bonus * hit_damage
         score = score + percentage_hit_bonus * (hit_damage / hit_char.max_hp)
         score = score + closeness_to_death_bonus * ((hit_char.max_hp - hit_char.hp + hit_damage) / hit_char.max_hp)
-        if hit_damage > hit_char.hp then score = score + kill_bonus
+        if hit_damage > hit_char.hp then score = score + kill_bonus end
       else
         score = score + hit_damage * hit_ally_cost
       end
@@ -91,6 +138,8 @@ function AI.FindPointWithLessPath(points, reachable_points)
       closest_point = reachable_points[hash]
     end
   end
+
+  if closest_point.path_length == -1 then return nil end
 
   return closest_point
 end
@@ -224,6 +273,10 @@ function AI.AddPointToSet(set, point_x, point_y)
 end
 
 function AI:GetPointsThatCanBeTargeted(char, map, skill)
+  -- Returns a list of points that can potentially be attacked with this skill
+  -- with any results (i.e. it would hit an enemy char).
+  -- That does not guarantee that char can actually execute this skill.
+  -- Char can too far away or out of action points.
   result = {}
   -- We will try only to hit cells where strike would
   -- affect an enemy.
@@ -256,5 +309,5 @@ function AI:GetPointsThatCanBeTargeted(char, map, skill)
     end
   end
 
-  return result;
+  return result
 end

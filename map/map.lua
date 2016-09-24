@@ -10,6 +10,7 @@ function Map.new(cells, chars, char_moved_callback, pass_turn_callback)
 
   map.cells = {}
   map.chars = {}
+  map.char_order = List.new()
   map.paths = {}
   map.char_moved_callback = char_moved_callback
   map.pass_turn_callback = pass_turn_callback
@@ -20,9 +21,9 @@ function Map.new(cells, chars, char_moved_callback, pass_turn_callback)
 end
 
 function Map:PassTurn()
-  for i, char in pairs(self.chars) do
-    char:PassTurn()
-  end
+  local current_char = self.char_order:PeekFirst()
+  current_char:PassTurn()
+  self:SwitchToNextChar()
 end
 
 function Map:IsPassable(cell_x, cell_y)
@@ -54,6 +55,35 @@ function Map:AddChars(chars)
     char.updater = self
     char_cell = MapPoint.new(char.cell_x, char.cell_y)
     self.chars[char_cell:GetHash()] = char
+  end
+
+  self:CreateCharOrder(chars)
+end
+
+function Map:CreateCharOrder(chars)
+  -- TODO: actually sort chars by speed before inserting them into order.
+  for i, char in pairs(chars) do
+    self.char_order:InsertLast(char)
+  end
+end
+
+function Map:GetCurrentChar()
+  return self.char_order:PeekFirst()
+end
+
+function Map:SwitchToNextChar()
+  local current_char = self.char_order:RemoveFirst()
+  if current_char.hp > 0 then
+    self.char_order:InsertLast(current_char)
+  end
+  
+  -- Remove dead chars from order that are already dead.
+  -- This is ok that we are not removing all the dead chars, because when their turn comes,
+  -- they would be removed as well.
+  current_char = self.char_order:PeekFirst()
+  while (current_char.hp <= 0) do
+    self.char_order:RemoveFirst()
+    current_char = self.char_order:PeekFirst()
   end
 end
 
@@ -163,14 +193,9 @@ function Map.PointToMoveVector(points, dest_cell_x, dest_cell_y)
 end
 
 function Map:EndPlayerTurnIfNeeded()
-  local player_chars_active = false
-  for i, char in pairs(self.chars) do
-    if char.is_player_controlled and char.ap > 0 then
-      player_chars_active = true
-    end
-  end
+  local current_char = self.char_order:PeekFirst()
   
-  if not player_chars_active then
+  if not (current_char.ap <= 0) then
     self:pass_turn_callback()
   end
 end

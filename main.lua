@@ -24,6 +24,7 @@ function create_test_chars()
   local char_3 = CharacterBase.new(1, 7, 'assets/characters/char.png')
   char_2.is_player_controlled = false
   table.insert(char.skills, Skills.Active.MeleeStrike.new())
+  table.insert(char_2.skills, Skills.Active.MeleeStrike.new())
   table.insert(char_3.skills, Skills.Active.Fireball.new())
   table.insert(chars, char)
   table.insert(chars, char_2)
@@ -71,12 +72,16 @@ function love.draw(dt)
 end
 
 function PassTurn()
-  UI.DisableControl()
-  -- TODO: select next character based on char initialite.
-  -- Make functions here that either initialize player move (if next char is player controlled)
-  -- or AI move.
-  is_player_turn = false
-  need_ai_move = true
+  map:PassTurn()
+  
+  next_char = map:GetCurrentChar()
+  if not current_char.is_player_controlled then
+    UI.DisableControl()
+    is_player_turn = false
+    need_ai_move = true
+  else
+    UI.EnableControl()
+  end
 end
 
 function EndAITurn()
