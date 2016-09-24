@@ -12,6 +12,7 @@ Skills.Active.ActiveSkillBase.damage = 0
 Skills.Active.ActiveSkillBase.img_src = ""
 Skills.Active.ActiveSkillBase.diameter = 0
 Skills.Active.ActiveSkillBase.distance = 0
+Skills.Active.ActiveSkillBase.name = "skill base"
 
 function Skills.Active.ActiveSkillBase.new(skill)
   skill.turns_till_cooldown = 0
@@ -83,6 +84,10 @@ function Skills.Active.ActiveSkillBase:GetDistance()
   -- Distance at which the attack can be made from attacker.
   -- 0 means close combat only.
   return self.distance
+end
+
+function Skills.Active.ActiveSkillBase:GetName()
+  return self.name
 end
 
 function Skills.Active.ActiveSkillBase:CellsAffected(char, map, target_cell_x, target_cell_y)

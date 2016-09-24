@@ -21,7 +21,7 @@ function AI.new()
   ai.move_to_point = nil
   ai.target_skill = nil
   ai.target_point = nil
-  ai.already_moved = false
+  ai.already_attacked = false
   return ai 
 end
 
@@ -34,19 +34,26 @@ function AI:StartMakingTurnForChar(char, map)
   self.move_to_point = nil
   self.target_skill = nil
   self.target_point = nil
-  self.already_moved = false
+  self.already_attacked = false
 end
 
 function AI:WhereToMove(char, map)
   self:CalculateTurnForChar(char, map)
+  
   if not self.move_to_point or (self.move_to_point.cell_x == char.cell_x and self.move_to_point.cell_y == char.cell_y) then
     return nil
   end
   
+  -- Special case. If character didn't attack this turn and doesn't have way to attack - just move him towards nearest character.
+  
   return self.move_to_point
 end
 
+function AI:FindNearestEnemy(char, map)
+end
+
 function AI:WhatToAttack(char, map)
+  self.already_attacked = true
   if self.target_skill and self.target_point then
     local target_skill = self.target_skill
     local target_point = self.target_point
@@ -57,15 +64,18 @@ function AI:WhatToAttack(char, map)
 end
 
 function AI:CalculateTurnForChar(char, map)
-  local best_move_point = nil
+  local best_move = nil
   local best_attack_point = nil
   local best_skill = nil
   local best_score = nil
 
-  local reachable_points = map:GetCharMovebalePoints(char)
+  LogDebug("Calculating ai turn for char: " .. char.name)
+
+  local reachable_points = map:GetCharMoveblePoints(char.cell_x, char.cell_y)
 
   for i, skill in pairs(char.skills) do
-    if not skill:GetApCost(char) > char.ap then
+    LogDebug("Calculating ai turn for skill: " .. skill:GetName())
+    if not (skill:GetApCost(char) > char.ap) then
       local new_move, new_attack, new_score = self:GetBestPointForSkill(char, map, skill, reachable_points)
       if new_score and (not best_score or new_score > best_score) then
         best_move = new_move
@@ -75,12 +85,8 @@ function AI:CalculateTurnForChar(char, map)
       end
     end
   end
-  
-  if best_move_point.cell_x == char.cell_x and best_move_point.cell_y == char.cell_y then
-    best_move_point = nil
-  end
 
-  self.move_to_point = best_move_point
+  self.move_to_point = best_move
   self.target_skill = best_skill
   self.target_point = best_attack_point
 end
@@ -101,7 +107,7 @@ function AI:GetBestPointForSkill(char, map, skill, reachable_points)
       if best_score == nil or best_score < new_score then
         best_score = new_score
         best_attack_point = target_point
-        best_move_point = closest_point
+        best_move_point = closest_point.point
       end
     end
   end
@@ -113,7 +119,7 @@ function AI.CalculateScore(target_point, skill, map, move_to_point, char)
   local path_lenght = move_to_point.path_length
   local score = path_length * move_cell_cost
   local chars_hit = {}
-  for i, points in skill:CellsAffected(char, map, target_point.cell_x, target_point.cell_y) do
+  for i, points in pairs(skill:CellsAffected(char, map, target_point.cell_x, target_point.cell_y)) do
     local hit_char = map:GetChar(target_point.cell_x, target_point.cell_y)
     if hit_char then
       local hit_damage = skill:GetDamage(char)
@@ -149,11 +155,11 @@ function AI:GetPointsToMoveForAttack(char, map, skill, target_point, reachable_p
   -- in order to make an attack to that point.
   
   local result = {}
-  local max_points_to_return = 10
+  local max_points = 10
 
   local distance = skill:GetDistance()
 
-  if distance() == 0 then
+  if distance == 0 then
     if AI.IsPointInSet(reachable_points, target_point.cell_x - 1, target_point.cell_y) then
       AI.AddPointToSet(result, target_point.cell_x - 1, target_point.cell_y)
     end
@@ -184,9 +190,9 @@ function AI:GetPointsToMoveForAttack(char, map, skill, target_point, reachable_p
   -- Option number 2 - char is within x, but no within y.
   if char.cell_x - target_point.cell_x <= distance then
     if char.cell_y < target_point.cell_y then
-      return AI.AddPointsIfReachable(char.cell_x, target_y - distance, max_points, true, true, true, false, reachable_points, map)
+      return AI.AddPointsIfReachable(char.cell_x, target_point.cell_y - distance, max_points, true, true, true, false, reachable_points, map)
     else
-      return AI.AddPointsIfReachable(char.cell_x, target_y + distance, max_points, true, true, false, true, reachable_points, map)
+      return AI.AddPointsIfReachable(char.cell_x, target_point.cell_y + distance, max_points, true, true, false, true, reachable_points, map)
     end
   end
 
@@ -227,9 +233,9 @@ function AI.AddPointsIfReachable(start_cell_x, start_cell_y, max_points, move_le
   local visited = {}
   local points_added = 0
 
-  queue.AddLast(MapPoint.new(start_cell_x, start_cell_y))
-  while not queue.IsEmpty() and points_added < max_points do
-    curr_point = queue.RemoveFirst()
+  queue:InsertLast(MapPoint.new(start_cell_x, start_cell_y))
+  while not queue:IsEmpty() and points_added < max_points do
+    curr_point = queue:RemoveFirst()
     if AI.IsPointInSet(reachable_points, curr_point.cell_x, curr_point.cell_y) then 
       AI.AddPointToSet(result, curr_point.cell_x, curr_point.cell_y) 
       points_added = points_added + 1
@@ -258,9 +264,9 @@ function AI.AddPointToQueueIfNotVisited(visited, queue, map, cell_x, cell_y)
   -- Plus, it checks if point is acutally present on map.
   -- Oh, well...
 
-  if not AI.IsPointsInSet(visited, cell_x, cell_y) and map.cells[MapPoint.CalculateHash(cell_x, cell_y)] then
+  if not AI.IsPointInSet(visited, cell_x, cell_y) and map.cells[MapPoint.CalculateHash(cell_x, cell_y)] then
     AI.AddPointToSet(visited, cell_x, cell_y)
-    queue.AddLast(MapPoint.new(cell_x, cell_y))
+    queue:InsertLast(MapPoint.new(cell_x, cell_y))
   end
 end
 
@@ -277,11 +283,11 @@ function AI:GetPointsThatCanBeTargeted(char, map, skill)
   -- with any results (i.e. it would hit an enemy char).
   -- That does not guarantee that char can actually execute this skill.
   -- Char can too far away or out of action points.
-  result = {}
+  local result = {}
   -- We will try only to hit cells where strike would
   -- affect an enemy.
-  enemies = {}
-  diameter = skill:GetDiameter()
+  local enemies = {}
+  local diameter = skill:GetDiameter()
 
   for i, target_char in pairs(map.chars) do
     if target_char.is_player_controlled then
@@ -290,19 +296,19 @@ function AI:GetPointsThatCanBeTargeted(char, map, skill)
   end
 
   for i, enemy in pairs(enemies) do
-    enemy_point = MapPoint.new(enemy.cell_x, enemy.cell_y)
+    local enemy_point = MapPoint.new(enemy.cell_x, enemy.cell_y)
     if skill:GetDiameter() == 0 then
       result[enemy_point:GetHash()] = enemy_point
     else
       -- Same as code in ActiveSkillBase just reversed oreder of event diameter.
       -- See comment there (though it does not explain how it works).
-      local mod = (self.diameter - 1) % 2
-      local start = math.floor((self.diameter - 1) / 2) + mod
-      local finish = math.floor((self.diameter - 1) / 2)
+      local mod = (diameter - 1) % 2
+      local start = math.floor((diameter - 1) / 2) + mod
+      local finish = math.floor((diameter - 1) / 2)
 
-      for cell_x = target_cell_x - start, target_cell_x + finish, 1 do
-        for cell_y = target_cell_y - start, target_cell_y + finish, 1 do
-          point = MapPoint.new(cell_x, cell_y)
+      for cell_x = enemy.cell_x - start, enemy.cell_x + finish, 1 do
+        for cell_y = enemy.cell_y - start, enemy.cell_y + finish, 1 do
+          local point = MapPoint.new(cell_x, cell_y)
           result[point:GetHash()] = point
         end
       end

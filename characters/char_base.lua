@@ -10,7 +10,7 @@ default_move_speed = (cell_size * 5)
 default_speed = 8
 default_hit_points = 25
 
-function CharacterBase.new(cell_x, cell_y, img_file, update_callback, updater)
+function CharacterBase.new(cell_x, cell_y, img_file, name, update_callback, updater)
   local char_base = {}
   setmetatable(char_base, CharacterBase)
   char_base.img = love.graphics.newImage(img_file)
@@ -19,13 +19,14 @@ function CharacterBase.new(cell_x, cell_y, img_file, update_callback, updater)
   x1, y1, x2, y2 = get_cell_coordinates(cell_x, cell_y)
   char_base.x = x1
   char_base.y = y1
+  char_base.name = name
   char_base.move_speed = default_move_speed
   char_base.update_callback = update_callback
   char_base.updater = updater
-  char_base.speed = default_speed
   char_base.max_ap = default_speed
   char_base.ap = default_speed
   char_base.is_player_controlled = true
+  char_base.max_hp = default_hit_points
   char_base.hp = default_hit_points
   char_base.skills = {}
   return char_base

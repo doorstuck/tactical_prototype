@@ -19,9 +19,9 @@ current_char = {}
 
 function create_test_chars()
   local chars = {}
-  local char = CharacterBase.new(5, 5, 'assets/characters/char.png')
-  local char_2 = CharacterBase.new(10, 5, 'assets/characters/char.png')
-  local char_3 = CharacterBase.new(1, 7, 'assets/characters/char.png')
+  local char = CharacterBase.new(5, 5, 'assets/characters/char.png', "Char 1")
+  local char_2 = CharacterBase.new(10, 5, 'assets/characters/char.png', "Char 2")
+  local char_3 = CharacterBase.new(1, 7, 'assets/characters/char.png', "Char 3")
   char_2.is_player_controlled = false
   table.insert(char.skills, Skills.Active.MeleeStrike.new())
   table.insert(char_2.skills, Skills.Active.MeleeStrike.new())
@@ -34,11 +34,12 @@ function create_test_chars()
 end
 
 function love.load(arg)
-  UI.Init(PassTurn)
+  UI.Init(EndTurnButtonPressed)
   
   -- For testing only
   map = Map.new(Map.GenerateCells(horizontal_cells, vertical_cells), create_test_chars(), CharFinishedMove, PassTurn)
   ai = AI.new()
+  UI.SelectChar(map:GetCurrentChar())
 end
 
 function love.update(dt)
@@ -50,17 +51,28 @@ function MakeAIMove()
   if not is_player_turn then
 
     if need_ai_move then
-      target_point = ai:WhereToMoveChar(current_char, map)
-      map:MoveChar(current_char, target_point.cell_x, target_point.cell_y)
+      LogDebug("Asking for a move from AI")
+      local target_point = ai:WhereToMove(current_char, map)
+      if target_point then
+        LogDebug("Received move to point from AI: " ..target_point:ToString())
+        map:MoveChar(current_char, target_point.cell_x, target_point.cell_y)
+      else
+        LogDebug("No move received from AI, passing to hit")
+        need_ai_hit = true
+      end
+
       need_ai_move = false
     elseif need_ai_hit then
-      target_skill, target_point = ai:WhatToAttack(current_char, map)
+      LogDebug("Asking for a hit from AI")
+      local target_skill, target_point = ai:WhatToAttack(current_char, map)
 
       if not target_skill or not target_point then
+        LogDebug("Not hit received from AI. Passing turn.")
         EndAITurn()
         return
       end
-      map:ExcecuteCharSkill(target_skill, target_point.cell_x, target_point.cell_y)
+
+      map:ExecuteCharSkill(current_char, target_skill, target_point.cell_x, target_point.cell_y)
       need_ai_hit = false
       need_ai_move = true
     end
@@ -72,23 +84,34 @@ function love.draw(dt)
 end
 
 function PassTurn()
-  map:PassTurn()
+  LogDebug("Turn is passed.")
   
-  next_char = map:GetCurrentChar()
+  current_char = map:GetCurrentChar()
   if not current_char.is_player_controlled then
+    LogDebug("Control is given to AI")
     UI.DisableControl()
     is_player_turn = false
     need_ai_move = true
   else
+    LogDebug("Control is given to player")
+    is_player_turn = true
     UI.EnableControl()
+    UI.SelectChar(current_char)
   end
+end
+
+function EndTurnButtonPressed()
+  LogDebug("End turn button is pressed.")
+  map:PassTurn()
+  PassTurn()
 end
 
 function EndAITurn()
   is_player_turn = true
   need_ai_hit = false
   need_ai_move = false
-  UI.EnableControl()
+  map:PassTurn()
+  PassTurn()
 end
 
 function love.mousepressed(x, y, button, istouch)
@@ -105,5 +128,6 @@ function CharFinishedMove()
     need_ai_hit = true
   else
     UI.EnableControl()
+    UI.SelectChar(map:GetCurrentChar())
   end
 end

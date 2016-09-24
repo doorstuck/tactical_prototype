@@ -19,21 +19,23 @@ function UI.Init(end_turn_callback)
 
   end_turn_button_img = love.graphics.newImage('assets/icons/end_turn.png')
   
-  end_turn_call= end_turn_callback
+  end_turn_call = end_turn_callback
 end
 
 function UI.Draw(map)
   UI.DrawBackground()
   UI.DrawGrid()
   UI.DrawCharacters(map)
-  UI.ColorSelectedCharCell()
-  UI.DrawCharacterMoves(selected_char, map)
-  UI.DrawMouseOverSquare(map)
-  UI.DrawSkills(map)
-  UI.ColorSelectedSkill()
+  if is_controlable then
+    UI.ColorSelectedCharCell()
+    UI.DrawCharacterMoves(selected_char, map)
+    UI.DrawMouseOverSquare(map)
+    UI.DrawSkills(map)
+    UI.ColorSelectedSkill()
+    UI.DrawCharsAP(map)
+    UI.DrawEndTurnButton()
+  end
   UI.DrawCharsHP(map)
-  UI.DrawCharsAP(map)
-  UI.DrawEndTurnButton()
 end
 
 function UI.SelectChar(char)
@@ -55,12 +57,12 @@ function UI.UnselectSkill()
 end
 
 function UI.EnableControl()
-  is_controlable = false
+  is_controlable = true 
   love.mouse.setVisible(true)
 end
 
 function UI.DisableControl()
-  is_controlable = true
+  is_controlable = false
   love.mouse.setVisible(false)
 end
 
@@ -87,6 +89,9 @@ function UI.IsCharSelectable(char)
 end
 
 function UI.MousePressedNormal(x, y, map)
+  LogError("Mouse pressed when char was not selected.")
+  LogError("This shouldn't normally happen since chars should be selected automatically")
+  
   cell_x, cell_y = get_cell_in(x, y)
   char_on_place = map:GetChar(cell_x, cell_y)
   if not UI.IsCharSelectable(char_on_place) then return end
@@ -96,8 +101,10 @@ end
 
 function UI.MousePressedSelectedChar(x, y, map)
   cell_x, cell_y = get_cell_in(x, y)
-  char_on_place = map:GetChar(cell_x, cell_y)
   
+  -- Large section down is commented since player cannot select char to move.
+  -- Currently it is automatic based on initiative.
+  --[[
   if char_on_place == selected_char then
     UI.UnselectChar()
     return
@@ -107,10 +114,14 @@ function UI.MousePressedSelectedChar(x, y, map)
     UI.SelectChar(char_on_place)
     return
   end
+  --]]
+  
+  if cell_x == selected_char.cell_x and cell_y == selected_char.cell_y then
+    return
+  end
 
   if UI.CharCanMoveThere(selected_char, map, cell_x, cell_y) then
     map:MoveChar(selected_char, cell_x, cell_y)
-    UI.UnselectChar()
     UI.DisableControl()
     return
   end
@@ -189,7 +200,7 @@ end
 
 function UI.DrawMouseOverSquare(map)
   cell_x, cell_y = get_cell_in(love.mouse.getPosition())
-  UI.DrawMouseOverChar(map, cell_x, cell_y)
+  -- UI.DrawMouseOverChar(map, cell_x, cell_y)
   UI.DrawMouseOverMovableSquares(map, cell_x, cell_y)
   UI.DrawMouseOverSkillSqure(map, cell_x, cell_y)
 end
@@ -239,7 +250,7 @@ function UI.DrawCharacters(map)
 end
 
 function UI.ColorSelectedCharCell()
-  if (not selected_char) then return end
+  if not selected_char then return end
   UI.ColorCell(selected_char.cell_x, selected_char.cell_y, 150, 0, 0, 100)
 end
 

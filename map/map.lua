@@ -22,8 +22,10 @@ end
 
 function Map:PassTurn()
   local current_char = self.char_order:PeekFirst()
+  LogDebug("Char passed turn: " .. current_char.name)
   current_char:PassTurn()
   self:SwitchToNextChar()
+  LogDebug("New char is moving: " .. self:GetCurrentChar().name)
 end
 
 function Map:IsPassable(cell_x, cell_y)
@@ -126,10 +128,10 @@ end
 function Map:GetCharMoveblePoints(cell_x, cell_y)
   char_point_hash = MapPoint.CalculateHash(cell_x, cell_y)
   char = self.chars[char_point_hash]
-  if (not char) then return nil end
+  if not char then return nil end
 
   points = self.paths[char_point_hash]
-  if (points) then return points end
+  if points then return points end
 
   points = PathFinder.FindAllReachablePoints(self, MapPoint.new(cell_x, cell_y), char.ap)
 
@@ -195,7 +197,13 @@ end
 function Map:EndPlayerTurnIfNeeded()
   local current_char = self.char_order:PeekFirst()
   
-  if not (current_char.ap <= 0) then
+  if current_char.ap <= 0 then
+    LogDebug("Passed turn for char " .. current_char.name .. " because she is out of action points")
+    LogDebug("Action points left: " .. current_char.ap)
+    if current_char.ap < 0 then
+      LogError("A char has a negative number of action points. Char " .. current_char.name .. " AP: " .. current_char.ap)
+    end
+    self:PassTurn()
     self:pass_turn_callback()
   end
 end
