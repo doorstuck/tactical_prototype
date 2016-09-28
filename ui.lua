@@ -311,8 +311,8 @@ function UI.DrawSkillEnabled(char, skill, map)
     -- We are in selected char mode. In that case if char moves
     -- to a square we need to know how many action points he will
     -- use to move there.
-    cell_x, cell_y = get_cell_in(love.mouse.getPosition())
-    path_length = UI.GetPathLengthTo(char, map, cell_x, cell_y)
+    local cell_x, cell_y = get_cell_in(love.mouse.getPosition())
+    local path_length = UI.GetPathLengthTo(char, map, cell_x, cell_y)
     
     if not path_length then
       return char:CanUseSkill(skill)

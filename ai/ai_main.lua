@@ -35,7 +35,6 @@ function AI:StartMakingTurnForChar(char, map)
 end
 
 function AI:WhereToMove(char, map)
-  --LogDebug("AI thinks where to move... Did already move : " .. self.already_moved.tostring())
   self:CalculateTurnForChar(char, map)
   
   if self.move_to_point and self.move_to_point.cell_x == char.cell_x and self.move_to_point.cell_y == char.cell_y then
@@ -136,7 +135,7 @@ function AI:GetBestPointForSkill(char, map, skill, reachable_points)
   for i, target_point in pairs(points_to_attack) do
     local points_to_attack_from = self:GetPointsToMoveForAttack(char, map, skill, target_point, reachable_points)
     local closest_point = AI.FindPointWithShortestPath(points_to_attack_from, reachable_points)
-    if closest_point and closest_point.path_length < char.ap - skill:GetApCost(char) then
+    if closest_point and (closest_point.path_length < (char.ap - skill:GetApCost(char))) then
       local new_score = AI.CalculateScore(target_point, skill, map, closest_point, char)
       if best_score == nil or best_score < new_score then
         best_score = new_score
@@ -150,7 +149,7 @@ function AI:GetBestPointForSkill(char, map, skill, reachable_points)
 end
 
 function AI.CalculateScore(target_point, skill, map, move_to_point, char)
-  local path_lenght = move_to_point.path_length
+  local path_length = move_to_point.path_length
   local score = path_length * move_cell_cost
   local chars_hit = {}
   for i, point in pairs(skill:CellsAffected(char, map, target_point.cell_x, target_point.cell_y)) do
@@ -191,9 +190,9 @@ function AI:GetPointsToMoveForAttack(char, map, skill, target_point, reachable_p
   local result = {}
   local max_points = 10
 
-  local distance = skill:GetDistance()
+  local distance = skill:GetDistance() - 1
 
-  if distance == 0 then
+  if distance == -1 then
     if AI.IsPointInSet(reachable_points, target_point.cell_x - 1, target_point.cell_y) then
       AI.AddPointToSet(result, target_point.cell_x - 1, target_point.cell_y)
     end
