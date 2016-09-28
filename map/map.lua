@@ -26,6 +26,7 @@ function Map:PassTurn()
   current_char:PassTurn()
   self:SwitchToNextChar()
   LogDebug("New char is moving: " .. self:GetCurrentChar().name)
+  self.paths = {}
 end
 
 function Map:IsPassable(cell_x, cell_y)
@@ -140,6 +141,15 @@ function Map:GetCharMoveblePoints(cell_x, cell_y)
   return points
 end
 
+function Map:GetAllCharPaths(cell_x, cell_y)
+  -- returns all paths withouth limit on char AP.
+  char_point_hash = MapPoint.CalculateHash(cell_x, cell_y)
+  char = self.chars[char_point_hash]
+  if not char then return nil end
+  -- path length = -1 so that all points are returned.
+  return PathFinder.FindAllReachablePoints(self, MapPoint.new(cell_x, cell_y), -1 --[[path_length--]])
+end
+
 function Map:ExecuteCharSkill(char, skill, cell_x, cell_y)
   char:ExecuteSkill(skill, self, cell_x, cell_y)
   self.paths[MapPoint.CalculateHash(char.cell_x, char.cell_y)] = nil
@@ -150,6 +160,7 @@ end
 function Map:RemoveDeadChars()
   for i, char in pairs(self.chars) do
     if char.hp <= 0 then
+      LogDebug("Removing dead char " .. char.name)
       self.chars[i] = nil
     end
   end
@@ -174,6 +185,25 @@ function Map:GetPathForChar(char, cell_x, cell_y)
   end
 
   return Map.PointToMoveVector(points, cell_x, cell_y)
+end
+
+function Map:GetPathForCharWithLimit(char, cell_x, cell_y, limit)
+  -- Gets where the char can move if she eventually wants to reach cell_x, cell_y.
+  -- Moves forwards as much as limit would make availalbe.
+  -- If limit is more than path length to cell_x, cell_y the result is path length.
+  -- Otherwise it is a shorter path.
+  local points = self:GetAllCharPaths(char.cell_x, char.cell_y)
+  if not points then
+    return nil
+  end
+
+  local vector = Map.PointToMoveVector(points, cell_x, cell_y)
+
+  while (vector:GetLength() > limit) do
+    vector:RemoveLast()
+  end
+
+  return vector
 end
 
 function Map.PointToMoveVector(points, dest_cell_x, dest_cell_y)

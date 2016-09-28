@@ -7,6 +7,7 @@ require "utils/log"
 require "ui"
 require "skills/melee_strike"
 require "skills/fireball"
+require "skills/arrow"
 require "ai/ai_main"
 
 map = nil
@@ -24,11 +25,11 @@ function create_test_chars()
   local char_3 = CharacterBase.new(1, 7, 'assets/characters/char.png', "Char 3")
   char_2.is_player_controlled = false
   table.insert(char.skills, Skills.Active.MeleeStrike.new())
-  table.insert(char_2.skills, Skills.Active.MeleeStrike.new())
+  table.insert(char_2.skills, Skills.Active.Fireball.new())
   table.insert(char_3.skills, Skills.Active.Fireball.new())
   table.insert(chars, char)
-  table.insert(chars, char_2)
   table.insert(chars, char_3)
+  table.insert(chars, char_2)
   current_char = char
   return chars
 end
@@ -72,6 +73,8 @@ function MakeAIMove()
         return
       end
 
+      LogDebug("Received attack point from AI: " .. target_point:ToString())
+
       map:ExecuteCharSkill(current_char, target_skill, target_point.cell_x, target_point.cell_y)
       need_ai_hit = false
       need_ai_move = true
@@ -90,6 +93,7 @@ function PassTurn()
   if not current_char.is_player_controlled then
     LogDebug("Control is given to AI")
     UI.DisableControl()
+    ai:StartMakingTurnForChar(current_char, map)
     is_player_turn = false
     need_ai_move = true
   else

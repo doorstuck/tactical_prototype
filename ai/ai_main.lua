@@ -21,39 +21,73 @@ function AI.new()
   ai.move_to_point = nil
   ai.target_skill = nil
   ai.target_point = nil
-  ai.already_attacked = false
+  ai.already_moved = false
   return ai 
 end
 
-function AI:MakeTurn(map)
-  LogDebug("I, AI, move")
-end
-
 function AI:StartMakingTurnForChar(char, map)
+  LogDebug("Starting calculating turn for " .. char.name)
   self.current_char = char
   self.move_to_point = nil
   self.target_skill = nil
   self.target_point = nil
-  self.already_attacked = false
+  self.already_moved = false
 end
 
 function AI:WhereToMove(char, map)
+  --LogDebug("AI thinks where to move... Did already move : " .. self.already_moved.tostring())
   self:CalculateTurnForChar(char, map)
   
-  if not self.move_to_point or (self.move_to_point.cell_x == char.cell_x and self.move_to_point.cell_y == char.cell_y) then
+  if self.move_to_point and self.move_to_point.cell_x == char.cell_x and self.move_to_point.cell_y == char.cell_y then
+    LogDebug("Passing move, since char can just be where she is.")
     return nil
   end
   
   -- Special case. If character didn't attack this turn and doesn't have way to attack - just move him towards nearest character.
+  if not self.move_to_point and not self.already_moved then
+    LogDebug("Calculating where to move since cannot attack")
+    local nearest_point = self:FindNearestEnemyPointToMove(char, map)
+    if nearest_point then
+      local path = map:GetPathForCharWithLimit(char, nearest_point.cell_x, nearest_point.cell_y, char.ap)
+      if path then self.move_to_point = path:PeekLast() end
+    end
+  end
   
+  self.already_moved = true
+
   return self.move_to_point
 end
 
-function AI:FindNearestEnemy(char, map)
+function AI:FindNearestEnemyPointToMove(char, map)
+  local all_paths = map:GetAllCharPaths(char.cell_x, char.cell_y)
+  local closest_point = nil
+  for i, char in pairs(map.chars) do
+    if char.is_player_controlled then
+      local up_point = MapPoint.new(char.cell_x, char.cell_y - 1)
+      local down_point = MapPoint.new(char.cell_x, char.cell_y + 1)
+      local right_point = MapPoint.new(char.cell_x + 1, char.cell_y)
+      local left_point = MapPoint.new(char.cell_x - 1, char.cell_y)
+      
+      local points = {}
+      table.insert(points, up_point)
+      table.insert(points, down_point)
+      table.insert(points, right_point)
+      table.insert(points, left_point)
+
+      for i, point in pairs(points) do
+        if AI.IsPointInSet(all_paths, point.cell_x, point.cell_y) then
+          if not closest_point or AI.GetSetValue(all_paths, closest_point).path_length > AI.GetSetValue(all_paths, point).path_length then
+            closest_point = point
+          end
+        end
+      end
+    end
+  end
+
+  return closest_point
 end
 
 function AI:WhatToAttack(char, map)
-  self.already_attacked = true
   if self.target_skill and self.target_point then
     local target_skill = self.target_skill
     local target_point = self.target_point
@@ -101,7 +135,7 @@ function AI:GetBestPointForSkill(char, map, skill, reachable_points)
   local points_to_attack = self:GetPointsThatCanBeTargeted(char, map, skill)
   for i, target_point in pairs(points_to_attack) do
     local points_to_attack_from = self:GetPointsToMoveForAttack(char, map, skill, target_point, reachable_points)
-    local closest_point = AI.FindPointWithLessPath(points_to_attack_from, reachable_points)
+    local closest_point = AI.FindPointWithShortestPath(points_to_attack_from, reachable_points)
     if closest_point and closest_point.path_length < char.ap - skill:GetApCost(char) then
       local new_score = AI.CalculateScore(target_point, skill, map, closest_point, char)
       if best_score == nil or best_score < new_score then
@@ -119,8 +153,8 @@ function AI.CalculateScore(target_point, skill, map, move_to_point, char)
   local path_lenght = move_to_point.path_length
   local score = path_length * move_cell_cost
   local chars_hit = {}
-  for i, points in pairs(skill:CellsAffected(char, map, target_point.cell_x, target_point.cell_y)) do
-    local hit_char = map:GetChar(target_point.cell_x, target_point.cell_y)
+  for i, point in pairs(skill:CellsAffected(char, map, target_point.cell_x, target_point.cell_y)) do
+    local hit_char = map:GetChar(point.cell_x, point.cell_y)
     if hit_char then
       local hit_damage = skill:GetDamage(char)
       if hit_char.is_player_controlled then
@@ -134,10 +168,10 @@ function AI.CalculateScore(target_point, skill, map, move_to_point, char)
     end
   end
 
- return score
+  return score
 end
 
-function AI.FindPointWithLessPath(points, reachable_points)
+function AI.FindPointWithShortestPath(points, reachable_points)
   local closest_point = { ["path_length"] = -1 }
   for hash, point in pairs(points) do
     if reachable_points[hash].path_length < closest_point.path_length or closest_point.path_length == -1 then
@@ -182,13 +216,13 @@ function AI:GetPointsToMoveForAttack(char, map, skill, target_point, reachable_p
   -- to be the ones with the shortest path to reach.
 
   -- Option number 1 - char is already in a place from where he can hit the enemy.
-  if char.cell_x - target_point.cell_x <= distance and char.cell_y - target_point.cell_x <= distance then
+  if math.abs(char.cell_x - target_point.cell_x) <= distance and math.abs(char.cell_y - target_point.cell_y) <= distance then
     AI.AddPointToSet(result, char.cell_x, char.cell_y)
     return result
   end
 
   -- Option number 2 - char is within x, but no within y.
-  if char.cell_x - target_point.cell_x <= distance then
+  if math.abs(char.cell_x - target_point.cell_x) <= distance then
     if char.cell_y < target_point.cell_y then
       return AI.AddPointsIfReachable(char.cell_x, target_point.cell_y - distance, max_points, true, true, true, false, reachable_points, map)
     else
@@ -197,7 +231,7 @@ function AI:GetPointsToMoveForAttack(char, map, skill, target_point, reachable_p
   end
 
   -- Option number 3 - char is within y, but not within x.
-  if char.cell_y - target_point.cell_y <= distance then
+  if math.abs(char.cell_y - target_point.cell_y) <= distance then
     if char.cell_x < target_point.cell_x then
       return AI.AddPointsIfReachable(target_point.cell_x - distance, char.cell_y, max_points, false, true, true, true, reachable_points, map)
     else
@@ -206,7 +240,7 @@ function AI:GetPointsToMoveForAttack(char, map, skill, target_point, reachable_p
   end
 
   -- Option number 4 - we are totally out. Need to find nearest angle point.
-  if target_point.cell_x - char.cell_x > distance then
+  if math.abs(target_point.cell_x - char.cell_x) > distance then
     -- This is left corner.
     if target_point.cell_y - char.cell_y > distance then
     -- This is upper corner.
@@ -278,6 +312,10 @@ function AI.AddPointToSet(set, point_x, point_y)
   set[MapPoint.CalculateHash(point_x, point_y)] = MapPoint.new(point_x, point_y)
 end
 
+function AI.GetSetValue(set, point)
+  return set[MapPoint.CalculateHash(point.cell_x, point.cell_y)]
+end
+
 function AI:GetPointsThatCanBeTargeted(char, map, skill)
   -- Returns a list of points that can potentially be attacked with this skill
   -- with any results (i.e. it would hit an enemy char).
@@ -314,6 +352,6 @@ function AI:GetPointsThatCanBeTargeted(char, map, skill)
       end
     end
   end
-
+  
   return result
 end

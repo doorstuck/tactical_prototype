@@ -12,6 +12,7 @@ selected_skill = nil
 is_controlable = true
 is_move_mode = false
 
+
 function UI.Init(end_turn_callback)
   love.graphics.setBlendMode("alpha")
   background_img = love.graphics.newImage('assets/background/grass.jpg')

@@ -19,19 +19,20 @@ function PathFinder.FindAllReachablePoints(map, origin_point, length_limit)
 end
 
 function PathFinder.FindAllReachablePointsInternal(map, list, length_limit, result_table)
-  if (not length_limit) or length_limit <= 0 then return end
-  while (not list:IsEmpty()) do
+  if not length_limit then return end
+  while not list:IsEmpty() do
     removed_item = list:RemoveFirst()
 
     current_point = removed_item["point"]
     path_length = removed_item["path_length"]
     prev_point = removed_item["prev_point"]
 
-    if (not current_point) then goto continue end
-    if (length_limit < path_length) then goto continue end
+    if not current_point then goto continue end
+    -- length limit less than zero means no length limit at all.
+    if length_limit < path_length and length_limit > 0 then goto continue end
 
     -- Already visited and visited quicker than this.
-    if (result_table[current_point:GetHash()] and result_table[current_point:GetHash()].path_length < path_length) then goto continue end
+    if (result_table[current_point:GetHash()] and result_table[current_point:GetHash()].path_length <= path_length) then goto continue end
 
     do
       local up_point = map.cells[MapPoint.CalculateHash(current_point.cell_x, current_point.cell_y - 1)]
@@ -44,7 +45,7 @@ function PathFinder.FindAllReachablePointsInternal(map, list, length_limit, resu
       PathFinder.InsertNextPoint(current_point, left_point, map, path_length + 1, list)
       PathFinder.InsertNextPoint(current_point, right_point, map, path_length + 1, list)
 
-      PathFinder.GetToNextPoint(map, current_point, prev_point, path_length, length_limit, result_table)
+      PathFinder.GetToNextPoint(current_point, prev_point, path_length, result_table)
     end
 
     ::continue::
@@ -57,7 +58,7 @@ function PathFinder.InsertNextPoint(prev_point, next_point, map, path_length, li
   list:InsertLast({ ["point"] = next_point, ["path_length"] = path_length, ["prev_point"] = prev_point })
 end
 
-function PathFinder.GetToNextPoint(map, current_point, prev_point, path_length, length_limit, result_table)
+function PathFinder.GetToNextPoint(current_point, prev_point, path_length, result_table)
   -- Already visited and visited quicker than this.
   result_table[current_point:GetHash()] = {}
   result_table[current_point:GetHash()].path_length = path_length
