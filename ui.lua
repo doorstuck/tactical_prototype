@@ -12,8 +12,17 @@ selected_skill = nil
 is_controlable = true
 is_move_mode = false
 
+-- ANIMATION STUFF --
+-- How many seconds to show attack
+attack_animation_duration = 0.7
+attack_animation_passed = 0
+attack_animation_on = false
+attack_cell_x = 0
+attack_cell_y = 0
+attack_skill = nil
+attack_char = nil
 
-function UI.Init(end_turn_callback)
+function UI.Init(end_turn_callback, end_attack_callback)
   love.graphics.setBlendMode("alpha")
   background_img = love.graphics.newImage('assets/background/grass.jpg')
   background_quad = love.graphics.newQuad(0, 0, background_width, background_height, background_img:getDimensions())
@@ -21,6 +30,7 @@ function UI.Init(end_turn_callback)
   end_turn_button_img = love.graphics.newImage('assets/icons/end_turn.png')
   
   end_turn_call = end_turn_callback
+  end_attack_call = end_attack_callback
 end
 
 function UI.Draw(map)
@@ -36,6 +46,8 @@ function UI.Draw(map)
     UI.DrawCharsAP(map)
     UI.DrawEndTurnButton()
   end
+
+  UI.DrawAttack(map)
   UI.DrawCharsHP(map)
 end
 
@@ -81,7 +93,42 @@ function UI.MousePressed(x, y, map)
   end
 end 
 
+function UI.ExecuteCharSkill(char, cell_x, cell_y, skill)
+  UI.DisableControl()
+  attack_cell_x = cell_x
+  attack_cell_y = cell_y
+  attack_skill = skill
+  attack_char = char
+  attack_animation_passed = 0
+  attack_animation_on = true
+end
+
+function UI.Update(dt)
+  if not attack_animation_on then return end
+
+  attack_animation_passed = attack_animation_passed + dt
+
+  if attack_animation_passed > attack_animation_duration then
+    attack_animation_on = false
+    end_attack_call(attack_char, attack_skill, attack_cell_x, attack_cell_y)
+    return
+  end
+end
 -- PRIVATE --
+
+function UI.DrawAttack(map)
+  if not attack_animation_on then return end
+
+  local cells_affected = attack_skill:CellsAffected(attack_char, map, attack_cell_x, attack_cell_y)
+  local max_brightness = 255.0
+
+  local brightness = -1 * math.abs(2 * max_brightness * attack_animation_passed / attack_animation_duration - max_brightness) + max_brightness
+  LogDebug("Brightness: " .. brightness)
+  
+  for i, cell in pairs(cells_affected) do
+    UI.ColorCell(cell.cell_x, cell.cell_y, 255, 0, 0, brightness)
+  end
+end
 
 function UI.IsCharSelectable(char)
   if not char or not char.is_player_controlled then return false end

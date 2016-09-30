@@ -2,7 +2,7 @@ require "skills/active_skill_base"
 require "map/map_point"
 
 Skills.Active.Arrow = {}
-Skills.Active.Arrow.__index =  Skills.Active.Fireball
+Skills.Active.Arrow.__index =  Skills.Active.Arrow
 
 Skills.Active.Arrow.ap_cost = 3
 Skills.Active.Arrow.damage = 18

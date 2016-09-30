@@ -25,7 +25,7 @@ function create_test_chars()
   local char_3 = CharacterBase.new(1, 7, 'assets/characters/char.png', "Char 3")
   char_2.is_player_controlled = false
   table.insert(char.skills, Skills.Active.MeleeStrike.new())
-  table.insert(char_2.skills, Skills.Active.Fireball.new())
+  table.insert(char_2.skills, Skills.Active.Arrow.new())
   table.insert(char_3.skills, Skills.Active.Fireball.new())
   table.insert(chars, char)
   table.insert(chars, char_3)
@@ -35,7 +35,7 @@ function create_test_chars()
 end
 
 function love.load(arg)
-  UI.Init(EndTurnButtonPressed)
+  UI.Init(EndTurnButtonPressed, CharFinishedAttack)
   
   -- For testing only
   map = Map.new(Map.GenerateCells(horizontal_cells, vertical_cells), create_test_chars(), CharFinishedMove, PassTurn)
@@ -45,6 +45,7 @@ end
 
 function love.update(dt)
   map:MoveChars(dt)
+  UI.Update(dt)
   MakeAIMove()
 end
 
@@ -75,14 +76,14 @@ function MakeAIMove()
 
       LogDebug("Received attack point from AI: " .. target_point:ToString())
 
-      map:ExecuteCharSkill(current_char, target_skill, target_point.cell_x, target_point.cell_y)
+      UI.ExecuteCharSkill(current_char, target_point.cell_x, target_point.cell_y, target_skill)
       need_ai_hit = false
-      need_ai_move = true
+      need_ai_move = false
     end
   end
 end
 
-function love.draw(dt)
+function love.draw()
   UI.Draw(map)
 end
 
@@ -125,6 +126,17 @@ function love.mousepressed(x, y, button, istouch)
   
   UI.MousePressed(x, y, map)
   
+end
+
+function CharFinishedAttack(char, skill, cell_x, cell_y)
+  map:ExecuteCharSkill(char, skill, cell_x, cell_y)
+
+  if not is_player_turn then
+    need_ai_move = true
+  else
+    UI.EnableControl()
+    UI.SelectChar(map:GetCurrentChar())
+  end
 end
 
 function CharFinishedMove()
