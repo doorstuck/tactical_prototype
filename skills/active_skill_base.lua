@@ -1,7 +1,5 @@
 require "skills/skill_base"
 
-Skills = {}
-Skills.Active = {}
 Skills.Active.ActiveSkillBase = {}
 
 Skills.Active.ActiveSkillBase.__index = Skills.Active.ActiveSkillBase

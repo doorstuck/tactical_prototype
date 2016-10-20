@@ -29,6 +29,8 @@ function CharacterBase.new(cell_x, cell_y, img_file, name, update_callback, upda
   char_base.max_hp = default_hit_points
   char_base.hp = default_hit_points
   char_base.skills = {}
+  char_base.passive_skills = {}
+  char_base.base_attack = {}
   return char_base
 end
 

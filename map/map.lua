@@ -1,5 +1,6 @@
 require "map/map_point"
 require "utils/path_finder"
+require "triggers"
 
 Map = {}
 Map.__index = Map
@@ -12,6 +13,12 @@ function Map.new(cells, chars, char_moved_callback, pass_turn_callback)
   map.chars = {}
   map.char_order = List.new()
   map.paths = {}
+  map.move_triggers = {}
+  map.attack_triggers = {}
+  map.end_turn_triggers = {}
+  -- This is a map that tells us what trigger is bound to which character (most of the triggers come from character skills).
+  -- This is need to remove triggers bound to characters that are dead.
+  map.trigger_to_char_map = {}
   map.char_moved_callback = char_moved_callback
   map.pass_turn_callback = pass_turn_callback
   map:AddCells(cells)
@@ -150,18 +157,69 @@ function Map:GetAllCharPaths(cell_x, cell_y)
   return PathFinder.FindAllReachablePoints(self, MapPoint.new(cell_x, cell_y), -1 --[[path_length--]])
 end
 
-function Map:ExecuteCharSkill(char, skill, cell_x, cell_y)
+function Map:ExecuteCharSkill(char, skill, cell_x, cell_y, ignore_triggers)
+  if not ignore_triggers then
+    self:ExecuteAttackTriggers(Triggers.preorder, char, MapPoint.new(cell_x, cell_y), skill)
+  end
+  -- delete everyone that didn't survive this chain of reactions.
+  self:RemoveDeadChars()
+
+  if not self:GetChar(char.cell_x, cell_y) then
+    self:EndPlayerTurnIfNeeded()
+    return
+  end
+
+  -- Here we go again, but for in order triggers we don't remove dead characters before this is 
+  -- actually executed.
+  if not ignore_triggers then
+    self:ExecuteAttackTriggers(Triggers.inorder, char, MapPoint.new(cell_x, cell_y), skill)
+  end
+
   char:ExecuteSkill(skill, self, cell_x, cell_y)
   self.paths[MapPoint.CalculateHash(char.cell_x, char.cell_y)] = nil
   self:RemoveDeadChars()
+
+  if not ignore_triggers then
+    self:ExecuteAttackTriggers(Triggers.postorder, char, MapPoint.new(cell_x, cell_y), skill)
+  end
+
   self:EndPlayerTurnIfNeeded()
+end
+
+function Map:ExecuteAttackTriggers(order, attacker, target_cell, skill)
+  for i, trigger in pairs(self.attack_triggers) do
+    LogDebug("Order " .. order .. " trigger is " .. trigger.order)
+    if trigger.order == order and trigger:ShouldTrigger(attacker, target_cell, skill) then
+      trigger:Activate(attacker, target_cell, skill)
+    end
+  end
 end
 
 function Map:RemoveDeadChars()
   for i, char in pairs(self.chars) do
     if char.hp <= 0 then
       LogDebug("Removing dead char " .. char.name)
+      for trigger, char in pairs(self.trigger_to_char_map) do
+        if char == char then self:UnregisterTrigger(trigger) end
+      end
       self.chars[i] = nil
+    end
+  end
+
+end
+
+function Map:UnregisterTrigger(trigger_to_remove)
+  LogDebug("Unregistering triggers from char" .. char.name)
+  self:UnregisterTriggerFromMap(trigger_to_remove, self.move_triggers)
+  self:UnregisterTriggerFromMap(trigger_to_remove, self.attack_triggers)
+  self:UnregisterTriggerFromMap(trigger_to_remove, self.end_turn_triggers)
+end
+
+function Map:UnregisterTriggerFromMap(trigger_to_remove, map)
+  for i, trigger in pairs(map) do
+    if trigger == trigger_to_remove then
+       LogDebug("Unregistering trigger " .. trigger:GetName())
+       map[i] = nil
     end
   end
 end
@@ -173,6 +231,13 @@ function Map:MoveChar(char, cell_x, cell_y)
     LogError("Char x: " .. char.cell_x .. " y: " .. char.cell_y)
     LogError("Destination: x: " .. cell_x .. " y: " .. cell_y)
     return
+  end
+
+  -- Check for triggers.
+  for i, trigger in pairs(self.move_triggers) do
+    if trigger.order == Triggers.preorder and trigger:ShouldTrigger(char, MapPoint.new(cell_x, cell_y)) then
+      trigger:Activate(char, MapPoint.new(cell_x, cell_y))
+    end
   end
   
   char:SetPath(path)
@@ -227,13 +292,29 @@ end
 function Map:EndPlayerTurnIfNeeded()
   local current_char = self.char_order:PeekFirst()
   
-  if current_char.ap <= 0 then
-    LogDebug("Passed turn for char " .. current_char.name .. " because she is out of action points")
-    LogDebug("Action points left: " .. current_char.ap)
+  if current_char.ap <= 0 or current_char.hp <= 0 then
+    LogDebug("Passed turn for char " .. current_char.name .. " because she is out of action points or health")
+    LogDebug("Action points left: " .. current_char.ap .. " hp left " .. current_char.hp)
     if current_char.ap < 0 then
       LogError("A char has a negative number of action points. Char " .. current_char.name .. " AP: " .. current_char.ap)
     end
     self:PassTurn()
     self:pass_turn_callback()
+  end
+end
+
+function Map:RegisterMoveTrigger(trigger, char)
+  table.insert(self.move_triggers, trigger)
+  LogDebug("Registering trigger " .. trigger:GetName())
+  if char then
+    self.trigger_to_char_map[trigger] = char 
+  end
+end
+
+function Map:RegisterAttackTrigger(trigger, char)
+  table.insert(self.attack_triggers, trigger)
+  LogDebug("Registering trigger " .. trigger:GetName())
+  if char then
+    self.trigger_to_char_map[trigger] = char
   end
 end

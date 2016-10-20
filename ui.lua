@@ -123,7 +123,6 @@ function UI.DrawAttack(map)
   local max_brightness = 255.0
 
   local brightness = -1 * math.abs(2 * max_brightness * attack_animation_passed / attack_animation_duration - max_brightness) + max_brightness
-  LogDebug("Brightness: " .. brightness)
   
   for i, cell in pairs(cells_affected) do
     UI.ColorCell(cell.cell_x, cell.cell_y, 255, 0, 0, brightness)

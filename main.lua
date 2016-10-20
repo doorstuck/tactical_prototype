@@ -8,6 +8,8 @@ require "ui"
 require "skills/melee_strike"
 require "skills/fireball"
 require "skills/arrow"
+require "skills/attack_on_move"
+require "skills/retaliate"
 require "ai/ai_main"
 
 map = nil
@@ -24,8 +26,12 @@ function create_test_chars()
   local char_2 = CharacterBase.new(10, 5, 'assets/characters/char.png', "Char 2")
   local char_3 = CharacterBase.new(1, 7, 'assets/characters/char.png', "Char 3")
   char_2.is_player_controlled = false
-  table.insert(char.skills, Skills.Active.MeleeStrike.new())
-  table.insert(char_2.skills, Skills.Active.Arrow.new())
+  local melee_strike = Skills.Active.MeleeStrike.new()
+  char.base_skill = melee_strike
+  table.insert(char.skills, melee_strike)
+  table.insert(char.passive_skills, Skills.Passive.AttackOnMove.new(char))
+  table.insert(char.passive_skills, Skills.Passive.Retaliate.new(char))
+  table.insert(char_2.skills, Skills.Active.MeleeStrike.new())
   table.insert(char_3.skills, Skills.Active.Fireball.new())
   table.insert(chars, char)
   table.insert(chars, char_3)
@@ -34,11 +40,21 @@ function create_test_chars()
   return chars
 end
 
+function RegisterPassiveSkills(chars)
+  for i, char in pairs(chars) do
+    for j, skill in pairs(char.passive_skills) do
+      skill:Register(map, char)
+    end
+  end
+end
+
 function love.load(arg)
   UI.Init(EndTurnButtonPressed, CharFinishedAttack)
   
   -- For testing only
-  map = Map.new(Map.GenerateCells(horizontal_cells, vertical_cells), create_test_chars(), CharFinishedMove, PassTurn)
+  local test_chars = create_test_chars()
+  map = Map.new(Map.GenerateCells(horizontal_cells, vertical_cells), test_chars, CharFinishedMove, PassTurn)
+  RegisterPassiveSkills(test_chars)
   ai = AI.new()
   UI.SelectChar(map:GetCurrentChar())
 end
