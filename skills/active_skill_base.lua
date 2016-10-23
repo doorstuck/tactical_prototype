@@ -35,8 +35,8 @@ function Skills.Active.ActiveSkillBase:GetApCost(char)
   return self.ap_cost
 end
 
-function Skills.Active.ActiveSkillBase:GetDamage(char)
-  return self.damage
+function Skills.Active.ActiveSkillBase:GetDamage(char, modifiers)
+  return self.ComputeDamage(self.damage, modifiers)
 end
 
 function Skills.Active.ActiveSkillBase:Execute(char, map, target_cell_x, target_cell_y)
@@ -114,4 +114,38 @@ function Skills.Active.ActiveSkillBase:CellsAffected(char, map, target_cell_x, t
   end
 
   return result
+end
+
+function Skills.Active.ActiveSkillBase:Execute(char, map, target_cell_x, target_cell_y, modifiers)
+  for i, cell_affected in pairs(self:CellsAffected(char, map, target_cell_x, target_cell_y)) do
+    target_char = map:GetChar(cell_affected.cell_x, cell_affected.cell_y)
+    if target_char then
+      target_char.hp = target_char.hp - self:GetDamage(char, modifiers)
+    end
+  end
+end
+
+function Skills.Active.ActiveSkillBase.ComputeDamage(initial_damage, modifiers)
+  LogDebug("Computing damage")
+  if not modifiers then return initial_damage end
+  LogDebug(modifiers)
+
+  local total_damage = initial_damage
+
+  -- first: go with non-percent modifiers.
+  for i, modifier in pairs(modifiers) do
+    if not modifier.is_percent then
+      total_damage = total_damage + modifier.value
+    end
+  end
+
+  -- second: go with percent modifiers.
+
+  for i, modifier in pairs(modifiers) do
+    if modifier.is_percent then
+      total_damage = total_damage * (1 + modifier.value)
+    end
+  end
+
+  return total_damage
 end

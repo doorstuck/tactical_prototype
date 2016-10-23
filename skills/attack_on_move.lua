@@ -1,6 +1,6 @@
 require "skills/passive_skill_base"
 require "map/map_point"
-require "triggers"
+require "triggers/attack_on_move"
 
 Skills.Passive.AttackOnMove = {}
 Skills.Passive.AttackOnMove.__index =  Skills.Passive.AttackOnMove

@@ -31,6 +31,7 @@ function CharacterBase.new(cell_x, cell_y, img_file, name, update_callback, upda
   char_base.skills = {}
   char_base.passive_skills = {}
   char_base.base_attack = {}
+  char_base.conditions = {}
   return char_base
 end
 
@@ -154,9 +155,9 @@ function CharacterBase:CanUseSkillAfterMove(skill, path_length)
   return true
 end
 
-function CharacterBase:ExecuteSkill(skill, map, cell_x, cell_y)
+function CharacterBase:ExecuteSkill(skill, map, cell_x, cell_y, modifiers)
   self.ap = self.ap - skill:GetApCost(self)
-  skill:Execute(self, map, cell_x, cell_y)
+  skill:Execute(self, map, cell_x, cell_y, modifiers)
 end
 
 function CharacterBase:PassTurn()

@@ -1,6 +1,6 @@
 require "skills/passive_skill_base"
 require "map/map_point"
-require "triggers"
+require "triggers/retaliate"
 
 Skills.Passive.Retaliate = {}
 Skills.Passive.Retaliate.__index =  Skills.Passive.Retaliate

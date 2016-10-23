@@ -158,8 +158,10 @@ function Map:GetAllCharPaths(cell_x, cell_y)
 end
 
 function Map:ExecuteCharSkill(char, skill, cell_x, cell_y, ignore_triggers)
+  LogDebug("Executing char skill: " .. skill:GetName())
+  local modifiers = {}
   if not ignore_triggers then
-    self:ExecuteAttackTriggers(Triggers.preorder, char, MapPoint.new(cell_x, cell_y), skill)
+    self:ExecuteAttackTriggers(Triggers.preorder, char, MapPoint.new(cell_x, cell_y), skill, modifiers)
   end
   -- delete everyone that didn't survive this chain of reactions.
   self:RemoveDeadChars()
@@ -172,25 +174,25 @@ function Map:ExecuteCharSkill(char, skill, cell_x, cell_y, ignore_triggers)
   -- Here we go again, but for in order triggers we don't remove dead characters before this is 
   -- actually executed.
   if not ignore_triggers then
-    self:ExecuteAttackTriggers(Triggers.inorder, char, MapPoint.new(cell_x, cell_y), skill)
+    self:ExecuteAttackTriggers(Triggers.inorder, char, MapPoint.new(cell_x, cell_y), skill, modifiers)
   end
 
-  char:ExecuteSkill(skill, self, cell_x, cell_y)
+  LogDebug("Actually attacking.")
+  char:ExecuteSkill(skill, self, cell_x, cell_y, modifiers)
   self.paths[MapPoint.CalculateHash(char.cell_x, char.cell_y)] = nil
   self:RemoveDeadChars()
 
   if not ignore_triggers then
-    self:ExecuteAttackTriggers(Triggers.postorder, char, MapPoint.new(cell_x, cell_y), skill)
+    self:ExecuteAttackTriggers(Triggers.postorder, char, MapPoint.new(cell_x, cell_y), skill, modifiers)
   end
 
   self:EndPlayerTurnIfNeeded()
 end
 
-function Map:ExecuteAttackTriggers(order, attacker, target_cell, skill)
+function Map:ExecuteAttackTriggers(order, attacker, target_cell, skill, modifiers)
   for i, trigger in pairs(self.attack_triggers) do
-    LogDebug("Order " .. order .. " trigger is " .. trigger.order)
     if trigger.order == order and trigger:ShouldTrigger(attacker, target_cell, skill) then
-      trigger:Activate(attacker, target_cell, skill)
+      trigger:Activate(attacker, target_cell, skill, modifiers)
     end
   end
 end
