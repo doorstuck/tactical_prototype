@@ -17,18 +17,9 @@ function Triggers:GetName()
   return self.name
 end
 
-function Triggers.Move:ShouldTrigger(char, cell)
-  -- This function is invoked every time a character moves to
-  -- check if trigger should actually take effect.
-  -- char is character that moved.
-  -- cell is characters destination.
-
-  return false
-end
-
 function Triggers:Activate(char, cell)
   -- Activate is called to actually resolve effect of the trigger.
-  -- Parameters are same as for ShouldTrigger.
+  -- Check the condition for actually resolving trigger here.
 end
 
 Triggers.Attack = {}

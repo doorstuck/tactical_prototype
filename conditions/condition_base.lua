@@ -1,4 +1,4 @@
-Condidtions = {}
+Conditions = {}
 
 Conditions.ConditionBase = {}
 
@@ -32,11 +32,26 @@ Conditions.ConditionBase.current_turn = 0
 
 Conditions.ConditionBase.duration = Conditions.Duration.Forever
 
-function Conditions.ConditionBase.new(condition, map, char)
+-- Remove this condition if starter has died. Otherwise, starter would be passed to the next
+-- character in chain.
+Conditions.ConditionBase.remove_if_starter_dies = true
+
+function Conditions.ConditionBase.new(char, char_starter, name, duration, turns_to_live, remove_if_started_dies)
   -- char is the char that has this condition.
+  -- char_started is the char that has set this condition. This is needed to know when to
+  -- remove this conditions if it outlived it's turns.
+  -- Turns are counted whenever char_started gets turn again.
+  condition = {}
+  setmetatable(condition, Conditions.ConditionBase)
+
   condition.current_turn = 0
-  condition.map = map
   condition.char = char
+  condition.char_starter = char_starter
+  condition.name = name
+  condition.duration = duration
+  condition.turns_to_live = turns_to_live
+  condition.remove_if_starter_dies = remove_if_starter_dies
+  return condition
 end
 
 function Conditions.ConditionBase:ShouldBeRemoved()
@@ -53,8 +68,11 @@ function Conditions.ConditionBase:PassTurn(char)
   end
 end
 
-function Conditions.ConditionBase:OnStart()
+function Conditions.ConditionBase:SetStarter(new_starter)
+  LogDebug("Reassigning starter from " .. self.char_starter:GetName() .. " to " .. new_starter:GetName() .. " for " .. self:GetName())
+  self.char_starter = new_starter
 end
 
-function Conditions.ConditionBase:OnEnd()
+function Conditions.ConditionBase:GetName()
+  return self.name
 end

@@ -1,6 +1,6 @@
 require "map/map_point"
 require "utils/path_finder"
-require "triggers"
+require "triggers/trigger_base"
 
 Map = {}
 Map.__index = Map
@@ -16,9 +16,9 @@ function Map.new(cells, chars, char_moved_callback, pass_turn_callback)
   map.move_triggers = {}
   map.attack_triggers = {}
   map.end_turn_triggers = {}
+  map.start_turn_triggers = {}
   -- This is a map that tells us what trigger is bound to which character (most of the triggers come from character skills).
   -- This is need to remove triggers bound to characters that are dead.
-  map.trigger_to_char_map = {}
   map.char_moved_callback = char_moved_callback
   map.pass_turn_callback = pass_turn_callback
   map:AddCells(cells)
@@ -33,6 +33,7 @@ function Map:PassTurn()
   current_char:PassTurn()
   self:SwitchToNextChar()
   LogDebug("New char is moving: " .. self:GetCurrentChar().name)
+  self:RemoveOldConditions(self:GetCurrentChar())
   self.paths = {}
 end
 
@@ -51,6 +52,10 @@ function Map:GetChar(cell_x, cell_y)
   local point_hash = map_point:GetHash()
 
   return self.chars[point_hash]
+end
+
+function Map:GetChars()
+  return self.chars
 end
 
 function Map:AddCells(cells)
@@ -83,18 +88,7 @@ end
 
 function Map:SwitchToNextChar()
   local current_char = self.char_order:RemoveFirst()
-  if current_char.hp > 0 then
-    self.char_order:InsertLast(current_char)
-  end
-  
-  -- Remove dead chars from order that are already dead.
-  -- This is ok that we are not removing all the dead chars, because when their turn comes,
-  -- they would be removed as well.
-  current_char = self.char_order:PeekFirst()
-  while (current_char.hp <= 0) do
-    self.char_order:RemoveFirst()
-    current_char = self.char_order:PeekFirst()
-  end
+  self.char_order:InsertLast(current_char)
 end
 
 function Map:DrawChars()
@@ -191,7 +185,7 @@ end
 
 function Map:ExecuteAttackTriggers(order, attacker, target_cell, skill, modifiers)
   for i, trigger in pairs(self.attack_triggers) do
-    if trigger.order == order and trigger:ShouldTrigger(attacker, target_cell, skill) then
+    if trigger.order == order then
       trigger:Activate(attacker, target_cell, skill, modifiers)
     end
   end
@@ -201,29 +195,57 @@ function Map:RemoveDeadChars()
   for i, char in pairs(self.chars) do
     if char.hp <= 0 then
       LogDebug("Removing dead char " .. char.name)
-      for trigger, char in pairs(self.trigger_to_char_map) do
-        if char == char then self:UnregisterTrigger(trigger) end
-      end
+      self:MoveOrRemoveConditionsFromDeadChar(char)
       self.chars[i] = nil
+      self.char_order:Remove(char)
     end
   end
 
 end
 
-function Map:UnregisterTrigger(trigger_to_remove)
-  LogDebug("Unregistering triggers from char" .. char.name)
-  self:UnregisterTriggerFromMap(trigger_to_remove, self.move_triggers)
-  self:UnregisterTriggerFromMap(trigger_to_remove, self.attack_triggers)
-  self:UnregisterTriggerFromMap(trigger_to_remove, self.end_turn_triggers)
-end
+function Map:MoveOrRemoveConditionsFromDeadChar(dead_char)
+  -- This function removes all the conditions that were assosiated with dead
+  -- char or moves them to the next char. Later is needed so that we properly
+  -- account number of turns that this condition should be in.
 
-function Map:UnregisterTriggerFromMap(trigger_to_remove, map)
-  for i, trigger in pairs(map) do
-    if trigger == trigger_to_remove then
-       LogDebug("Unregistering trigger " .. trigger:GetName())
-       map[i] = nil
+  -- conditions that need to be removed after starter died.
+
+  -- IMPORTANT! This function has to be called before char_order is
+  -- updated, otherwise we wouldn't know index of dead char in char_order.
+  -- Without that information we wouldn't know where to move starter to.
+  conditions_to_remove = {}
+
+  for i, char in pairs(self:GetChars()) do
+    for j, condition in pairs(char:GetAllConditions()) do
+      if condition.char_starter == dead_char then
+        if condition.remove_if_starter_dies then
+          table.insert(conditions_to_remove, condition)
+        else
+          MoveCondition(condition, dead_char)
+        end
+      end
     end
   end
+
+  -- actually remove conditions.
+  for i, condition in pairs(conditions_to_remove) do
+    condition.char:RemoveCondition(condition)
+  end
+end
+
+function Map:MoveCondition(condition, dead_char)
+  -- Moving char_starter from dead char to the next.
+
+  LogDebug("Moving condition " .. condition:GetName())
+  local dead_char_index = self.char_order:IndexOf(dead_char)
+  if dead_char_index == (self.char_order:GetLength() - 1) then
+    -- dead char is at the very end of the line.
+    -- First char in the order gets to get all the honor.
+    condition:SetStarter(self.char_order:At(0))
+  else
+    condition:SetStarter(self.char_order:At(dead_char_index + 1))
+  end
+
 end
 
 function Map:MoveChar(char, cell_x, cell_y)
@@ -237,7 +259,7 @@ function Map:MoveChar(char, cell_x, cell_y)
 
   -- Check for triggers.
   for i, trigger in pairs(self.move_triggers) do
-    if trigger.order == Triggers.preorder and trigger:ShouldTrigger(char, MapPoint.new(cell_x, cell_y)) then
+    if trigger.order == Triggers.preorder then
       trigger:Activate(char, MapPoint.new(cell_x, cell_y))
     end
   end
@@ -305,18 +327,56 @@ function Map:EndPlayerTurnIfNeeded()
   end
 end
 
-function Map:RegisterMoveTrigger(trigger, char)
-  table.insert(self.move_triggers, trigger)
+function Map:RegisterMoveTrigger(trigger)
+  self:RegisterTrigger(self.move_triggers, trigger)
+end
+
+function Map:RegisterAttackTrigger(trigger)
+  self:RegisterTrigger(self.attack_triggers, trigger)
+end
+
+function Map:RegisterEndTurnTrigger(trigger)
+  self:RegisterTrigger(self.end_turn_triggers, trigger)
+end
+
+function Map:RegisterStartTurnTrigger(trigger)
+  self:RegisterTrigger(self.start_turn_triggers, trigger)
+end
+
+function Map:RegisterTrigger(map, trigger)
+  if map[trigger:GetName()] then
+    LogDebug("This trigger has already been registed, skipping.")
+    return
+  end
   LogDebug("Registering trigger " .. trigger:GetName())
-  if char then
-    self.trigger_to_char_map[trigger] = char 
+  map[trigger:GetName()] = trigger
+end
+
+function Map:RemoveOldConditions(next_char)
+  for i, char in pairs(self.chars) do
+    for i, condition in pairs(char:GetAllConditions()) do
+      condition:PassTurn(next_char)
+      if condition:ShouldBeRemoved() then
+        condition:OnEnd()
+        char:RemoveCondition(condition)
+      end
+    end
   end
 end
 
-function Map:RegisterAttackTrigger(trigger, char)
-  table.insert(self.attack_triggers, trigger)
-  LogDebug("Registering trigger " .. trigger:GetName())
-  if char then
-    self.trigger_to_char_map[trigger] = char
+function Map:GetTriggers(name)
+  local triggers = {}
+  self:GetTriggersByName(name, self.move_triggers, triggers)
+  self:GetTriggersByName(name, self.attack_triggers, triggers)
+  self:GetTriggersByName(name, self.end_turn_triggers, triggers)
+  self:GetTriggersByName(name, self.start_turn_triggers, triggers)
+  return triggers
+end
+
+function Map:GetTriggerByName(name, trigger_table, output)
+  for i, trigger in pairs(trigger_table) do
+    if trigger:GetName() == name then
+      table.insert(output, trigger)
+    end
   end
 end

@@ -167,3 +167,36 @@ function CharacterBase:PassTurn()
   
   self.ap = self.max_ap
 end
+
+function CharacterBase:GetName()
+  return self.name
+end
+
+function CharacterBase:GetConditions(name)
+  local conditions = {}
+  for i, condition in pairs(self.conditions) do
+    if condition:GetName() == name then
+      table.insert(conditions, condition)
+    end
+  end
+
+  return conditions
+end
+
+function CharacterBase:GetAllConditions()
+  return self.conditions
+end
+
+function CharacterBase:RemoveCondition(condition_to_remove)
+  LogDebug("Removing condition " .. condition_to_remove:GetName() .. " from " .. self:GetName())
+  for i, condition in pairs(self.conditions) do
+    if condition_to_remove == condition then
+      self.conditions[i] = nil
+    end
+  end
+end
+
+function CharacterBase:AddCondition(condition)
+  LogDebug("Adding condition to " .. self:GetName() .. " condition: " .. condition:GetName())
+  table.insert(self.conditions, condition)
+end

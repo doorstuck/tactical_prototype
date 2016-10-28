@@ -9,7 +9,7 @@ Skills.Active.Arrow.damage = 18
 Skills.Active.Arrow.img_src = '/assets/skills/scroll.png'
 Skills.Active.Arrow.distance = 4
 Skills.Active.Arrow.diameter = 0
-Skills.Active.Arrow.name = "fireball"
+Skills.Active.Arrow.name = "arrow"
 
 function Skills.Active.Arrow.new()
   skill = {}

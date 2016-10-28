@@ -5,7 +5,7 @@ require "triggers/retaliate"
 Skills.Passive.Retaliate = {}
 Skills.Passive.Retaliate.__index =  Skills.Passive.Retaliate
 
-Skills.Passive.Retaliate.name = "fireball"
+Skills.Passive.Retaliate.name = "retaliate"
 
 function Skills.Passive.Retaliate.new(char)
   skill = {}
@@ -17,6 +17,7 @@ end
 setmetatable(Skills.Passive.Retaliate,{__index = Skills.Passive.PassiveSkillBase})
 
 function Skills.Passive.Retaliate:Register(map, char)
-  local retaliate_trigger = Triggers.Attack.Retaliate.new(self.char, map)
-  map:RegisterAttackTrigger(retaliate_trigger, map)
+  local retaliate_trigger = Triggers.Attack.Retaliate.new(map)
+  map:RegisterAttackTrigger(retaliate_trigger)
+  self.char:AddCondition(Conditions.ConditionBase.new(self.char, self.char, self:GetName(), Conditions.Duration.Forever, 0, false))
 end

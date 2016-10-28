@@ -39,10 +39,6 @@ function Skills.Active.ActiveSkillBase:GetDamage(char, modifiers)
   return self.ComputeDamage(self.damage, modifiers)
 end
 
-function Skills.Active.ActiveSkillBase:Execute(char, map, target_cell_x, target_cell_y)
-  self.turn_till_cooldown = self.cooldown
-end
-
 function Skills.Active.ActiveSkillBase.IsEnemy(char, map, target_cell_x, target_cell_y)
   target_char = map:GetChar(target_cell_x, target_cell_y)
   if not target_char then return false end
@@ -117,6 +113,8 @@ function Skills.Active.ActiveSkillBase:CellsAffected(char, map, target_cell_x, t
 end
 
 function Skills.Active.ActiveSkillBase:Execute(char, map, target_cell_x, target_cell_y, modifiers)
+  self.turn_till_cooldown = self.cooldown
+
   for i, cell_affected in pairs(self:CellsAffected(char, map, target_cell_x, target_cell_y)) do
     target_char = map:GetChar(cell_affected.cell_x, cell_affected.cell_y)
     if target_char then
@@ -126,8 +124,8 @@ function Skills.Active.ActiveSkillBase:Execute(char, map, target_cell_x, target_
 end
 
 function Skills.Active.ActiveSkillBase.ComputeDamage(initial_damage, modifiers)
-  LogDebug("Computing damage")
   if not modifiers then return initial_damage end
+  LogDebug("Computing Damage")
   LogDebug(modifiers)
 
   local total_damage = initial_damage

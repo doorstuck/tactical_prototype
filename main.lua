@@ -10,6 +10,7 @@ require "skills/fireball"
 require "skills/arrow"
 require "skills/attack_on_move"
 require "skills/retaliate"
+require "skills/mark"
 require "ai/ai_main"
 
 map = nil
@@ -23,8 +24,9 @@ current_char = {}
 function create_test_chars()
   local chars = {}
   local char = CharacterBase.new(5, 5, 'assets/characters/char.png', "Char 1")
-  local char_2 = CharacterBase.new(10, 5, 'assets/characters/char.png', "Char 2")
-  local char_3 = CharacterBase.new(1, 7, 'assets/characters/char.png', "Char 3")
+  local char_2 = CharacterBase.new(10, 5, 'assets/characters/char.png', "Enemy 1")
+  local char_4 = CharacterBase.new(11, 5, 'assets/characters/char.png', "Enemy 2")
+  local char_3 = CharacterBase.new(10, 7, 'assets/characters/char.png', "Char 3")
   char_2.is_player_controlled = false
   local melee_strike = Skills.Active.MeleeStrike.new()
   char.base_skill = melee_strike
@@ -32,10 +34,12 @@ function create_test_chars()
   table.insert(char.passive_skills, Skills.Passive.AttackOnMove.new(char))
   table.insert(char.passive_skills, Skills.Passive.Retaliate.new(char))
   table.insert(char_2.skills, Skills.Active.MeleeStrike.new())
-  table.insert(char_3.skills, Skills.Active.Fireball.new())
+  table.insert(char_3.skills, Skills.Active.Arrow.new())
+  table.insert(char_3.skills, Skills.Active.Mark.new())
   table.insert(chars, char)
   table.insert(chars, char_3)
   table.insert(chars, char_2)
+  table.insert(chars, char_4)
   current_char = char
   return chars
 end

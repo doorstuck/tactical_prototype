@@ -11,5 +11,9 @@ function Skills.Passive.PassiveSkillBase.new(skill, char)
   skill.char = char
 end
 
+function Skills.Passive.PassiveSkillBase:GetName()
+  return self.name
+end
+
 function Skills.Passive:Register(map)
 end
