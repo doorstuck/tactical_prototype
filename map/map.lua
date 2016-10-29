@@ -160,7 +160,7 @@ function Map:ExecuteCharSkill(char, skill, cell_x, cell_y, ignore_triggers)
   -- delete everyone that didn't survive this chain of reactions.
   self:RemoveDeadChars()
 
-  if not self:GetChar(char.cell_x, cell_y) then
+  if not self:GetChar(char.cell_x, char.cell_y) then
     self:EndPlayerTurnIfNeeded()
     return
   end

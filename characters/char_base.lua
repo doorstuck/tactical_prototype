@@ -8,7 +8,7 @@ CharacterBase.__index = CharacterBase
 default_move_speed = (cell_size * 5)
 
 default_speed = 8
-default_hit_points = 25
+default_hit_points = 6
 
 function CharacterBase.new(cell_x, cell_y, img_file, name, update_callback, updater)
   local char_base = {}
